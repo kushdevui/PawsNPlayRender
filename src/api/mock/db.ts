@@ -6,8 +6,8 @@ import settingsJson from '../../../mock/data/settings.json';
 import type { Booking, Dog, FacilitySettings, User } from '../types';
 
 export type MockUser = User & { password: string };
-/** Stored booking = API booking without the joined `dog` summary. */
-export type StoredBooking = Omit<Booking, 'dog'>;
+/** Stored booking = API booking without the joined `dog` summary and derived payment totals. */
+export type StoredBooking = Omit<Booking, 'dog' | 'amountPaid' | 'balanceDue' | 'paymentStatus'>;
 
 const clone = <T>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
 

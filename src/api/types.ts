@@ -62,6 +62,30 @@ export type DogInput = Omit<Dog, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 
 export type BookingStatus = 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
 export type BookingSource = 'admin' | 'app';
 
+// ---------- Payments ----------
+export type PaymentMethod = 'cash' | 'upi' | 'card' | 'bank';
+/** advance = paid before/at booking, payment = later instalment/settlement, refund = money returned (reduces paid). */
+export type PaymentType = 'advance' | 'payment' | 'refund';
+export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'overpaid';
+
+export interface Payment {
+  id: string;
+  amount: number; // always positive; refunds are subtracted
+  type: PaymentType;
+  method: PaymentMethod;
+  note: string;
+  receivedAt: string; // ISO
+  recordedBy: string; // user id
+}
+
+export interface PaymentInput {
+  amount: number;
+  type: PaymentType;
+  method: PaymentMethod;
+  note?: string;
+  receivedAt?: string; // default now
+}
+
 export interface DogSummary {
   id: string;
   name: string;
@@ -88,6 +112,13 @@ export interface Booking {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  payments: Payment[];
+  /** Derived by the server: advances + payments - refunds. */
+  amountPaid: number;
+  /** Derived: totalAmount - amountPaid (0 for cancelled; negative = overpaid). */
+  balanceDue: number;
+  /** Derived from amountPaid vs totalAmount. */
+  paymentStatus: PaymentStatus;
 }
 
 export interface BookingInput {
@@ -105,6 +136,25 @@ export interface BookingFilters {
   to?: string;
   status?: BookingStatus;
   dogId?: string;
+  paymentStatus?: PaymentStatus | 'due'; // due = unpaid or partial
+}
+
+/** Billing for stays that CHECK IN within [from, to). Cancelled stays are excluded. */
+export interface BillingSummary {
+  from: string;
+  to: string;
+  currency: string;
+  bookings: number;
+  expected: number; // sum of totalAmount
+  received: number; // sum of amountPaid
+  due: number; // sum of positive balances
+  advances: number; // sum of advance payments
+  paidCount: number;
+  partialCount: number;
+  unpaidCount: number;
+  /** All months, non-cancelled, not yet fully paid. */
+  outstandingAllTime: number;
+  outstandingBookings: number;
 }
 
 // ---------- Facility ----------
@@ -125,9 +175,27 @@ export interface DashboardStats {
   todayCheckIns: Booking[];
   todayCheckOuts: Booking[];
   upcoming: Booking[]; // next 7 days, not yet checked in
-  occupancyNext7Days: Array<{ date: string; count: number }>; // date = YYYY-MM-DD (local)
+  occupancyNext7Days: Array<{ date: string; count: number }>; // date = YYYY-MM-DD (local), count = peak dogs that day
   activeDogs: number;
   bookingsThisMonth: number;
+  /** Money still to collect across all non-cancelled stays. */
+  paymentsDue: number;
+  paymentsDueBookings: number;
+}
+
+/** One calendar day in the occupancy calendar. */
+export interface OccupancyDay {
+  date: string; // YYYY-MM-DD (facility local)
+  /** Peak dogs present at the same time that day. */
+  occupied: number;
+  available: number;
+  checkIns: number;
+  checkOuts: number;
+}
+
+export interface OccupancyCalendar {
+  capacity: number;
+  days: OccupancyDay[];
 }
 
 export interface AuthResponse {

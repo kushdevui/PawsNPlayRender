@@ -8,6 +8,7 @@ import { useDog } from '@/features/dogs/hooks';
 import { BookingForm } from '@/features/bookings/BookingForm';
 import { useBooking, useSetBookingStatus, useUpdateBooking } from '@/features/bookings/hooks';
 import { bookingStatusLabel, bookingStatusTone } from '@/features/bookings/status';
+import { PaymentCard } from '@/features/payments/PaymentCard';
 import { makeStyles } from '@/theme';
 import { formatDateTime } from '@/utils/date';
 import { formatPrice, plural } from '@/utils/format';
@@ -54,13 +55,15 @@ export default function BookingDetail() {
         </View>
         <InfoRow icon="login" label="Check-in" value={formatDateTime(booking.checkIn)} />
         <InfoRow icon="logout" label="Check-out" value={formatDateTime(booking.checkOut)} />
-        <InfoRow icon="weather-night" label="Stay" value={`${plural(booking.nights, 'night')} · ${formatPrice(booking.totalAmount, booking.currency)}`} />
+        <InfoRow icon="weather-night" label="Stay" value={`${plural(booking.nights, 'night')} × ${formatPrice(booking.pricePerNight, booking.currency)} = ${formatPrice(booking.totalAmount, booking.currency)}`} />
         <InfoRow icon="home-outline" label="Kennel" value={booking.kennel} />
         {!!booking.notes && <InfoRow icon="note-text-outline" label="Notes" value={booking.notes} />}
       </Card>
 
       {!!actionError && <InlineAlert message={actionError} />}
       <StatusActions booking={booking} loading={setStatus.isPending} onRun={run} onCancel={confirmCancel} />
+
+      <PaymentCard booking={booking} />
 
       {dog.data && (
         <Card onPress={() => router.push({ pathname: '/admin/dog/[id]', params: { id: dog.data!.id } })}>

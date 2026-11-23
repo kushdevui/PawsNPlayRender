@@ -14,6 +14,7 @@ export default function AdminLayout() {
         <Stack.Screen name="booking/[id]" options={{ title: 'Booking' }} />
         <Stack.Screen name="dog/new" options={{ title: 'Add dog' }} />
         <Stack.Screen name="dog/[id]" options={{ title: 'Dog' }} />
+        <Stack.Screen name="settings" options={{ title: 'Boarding settings' }} />
       </Stack>
     </RoleGate>
   );

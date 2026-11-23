@@ -1,7 +1,7 @@
 // Mock route handlers for the boarding admin. Mirrors mock/endpoints.json and docs/ARCHITECTURE.md.
 // No axios here, so it is easy to unit test. The Node backend should implement the same rules.
 import { db, newId, publicUser, type MockUser, type StoredBooking } from './db';
-import type { Booking, BookingStatus, Dog, Role } from '../types';
+import type { Booking, BookingStatus, Dog, PaymentStatus, Role } from '../types';
 
 export interface MockRequest {
   method: string;
@@ -79,19 +79,54 @@ const OPEN: BookingStatus[] = ['pending', 'confirmed', 'checked_in'];
 const overlaps = (aStart: number, aEnd: number, bStart: number, bEnd: number) => aStart < bEnd && bStart < aEnd;
 
 /** Highest number of dogs present at the same time within [start, end), ignoring one booking. */
-const peakOccupancy = (start: number, end: number, ignoreId?: string) => {
+const peakOccupancy = (start: number, end: number, ignoreId?: string, statuses: BookingStatus[] = OCCUPYING) => {
   const relevant = db.bookings.filter(
-    (b) => b.id !== ignoreId && OCCUPYING.includes(b.status) && overlaps(start, end, ms(b.checkIn), ms(b.checkOut)),
+    (b) => b.id !== ignoreId && statuses.includes(b.status) && overlaps(start, end, ms(b.checkIn), ms(b.checkOut)),
   );
   const points = [start, ...relevant.map((b) => ms(b.checkIn)).filter((p) => p > start && p < end)];
   return Math.max(0, ...points.map((p) => relevant.filter((b) => ms(b.checkIn) <= p && p < ms(b.checkOut)).length));
+};
+
+/**
+ * Stats for one local calendar day.
+ * occupied = peak dogs present at the same time that day (a dog leaving at 11:00 and one arriving
+ * at 20:00 share a kennel). Past days also count checked-out stays so history stays accurate.
+ */
+const dayStats = (dayStart: number) => {
+  const dayEnd = dayStart + DAY;
+  const isPast = dayEnd <= startOfLocalDay(new Date()).getTime();
+  const statuses: BookingStatus[] = isPast ? [...OCCUPYING, 'checked_out'] : OCCUPYING;
+  const occupied = peakOccupancy(dayStart, dayEnd, undefined, statuses);
+  const counted = db.bookings.filter((b) => statuses.includes(b.status));
+  return {
+    date: localDateKey(new Date(dayStart)),
+    occupied,
+    available: Math.max(0, db.settings.capacity - occupied),
+    checkIns: counted.filter((b) => ms(b.checkIn) >= dayStart && ms(b.checkIn) < dayEnd).length,
+    checkOuts: counted.filter((b) => ms(b.checkOut) >= dayStart && ms(b.checkOut) < dayEnd).length,
+  };
+};
+
+const parseDateKey = (key: string | undefined) => {
+  if (!key || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return null;
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).getTime();
 };
 
 const dogSummary = (dogId: string) => {
   const d = db.dogs.find((x) => x.id === dogId);
   return d ? { id: d.id, name: d.name, breed: d.breed, ownerName: d.ownerName, ownerPhone: d.ownerPhone } : null;
 };
-const withDog = (b: StoredBooking): Booking => ({ ...b, dog: dogSummary(b.dogId) });
+/** Money rules: paid = advances + payments - refunds; cancelled stays owe nothing. */
+const paymentTotals = (b: StoredBooking) => {
+  const amountPaid = b.payments.reduce((sum, p) => sum + (p.type === 'refund' ? -p.amount : p.amount), 0);
+  const owed = b.status === 'cancelled' ? 0 : b.totalAmount;
+  const balanceDue = owed - amountPaid;
+  const paymentStatus: PaymentStatus =
+    balanceDue < 0 ? 'overpaid' : owed === 0 || balanceDue === 0 ? 'paid' : amountPaid > 0 ? 'partial' : 'unpaid';
+  return { amountPaid, balanceDue, paymentStatus };
+};
+const withDog = (b: StoredBooking): Booking => ({ ...b, dog: dogSummary(b.dogId), ...paymentTotals(b) });
 
 /** Shared create/update validation for a stay. */
 const validateStay = (input: { dogId: string; checkIn: string; checkOut: string }, ignoreId?: string) => {
@@ -239,14 +274,15 @@ const routes: Array<[string, string, Handler]> = [
   // Bookings
   ['GET', '/bookings', (ctx) => {
     requireUser(ctx, STAFF);
-    const { from, to, status, dogId } = ctx.query;
+    const { from, to, status, dogId, paymentStatus } = ctx.query;
     const f = from ? ms(from) : -Infinity;
     const t = to ? ms(to) : Infinity;
     const items = db.bookings
       .filter((b) => overlaps(f, t, ms(b.checkIn), ms(b.checkOut)))
       .filter((b) => (!status || b.status === status) && (!dogId || b.dogId === dogId))
       .sort(byCheckIn)
-      .map(withDog);
+      .map(withDog)
+      .filter((b) => !paymentStatus || (paymentStatus === 'due' ? b.balanceDue > 0 : b.paymentStatus === paymentStatus));
     return list(items, ctx.query);
   }],
   ['GET', '/bookings/:id', (ctx) => (requireUser(ctx, STAFF), ok(withDog(findOr404(db.bookings, ctx.params.id, 'Booking'))))],
@@ -262,6 +298,7 @@ const routes: Array<[string, string, Handler]> = [
       id: newId('b'), dogId, checkIn: new Date(checkIn).toISOString(), checkOut: new Date(checkOut).toISOString(),
       status: 'confirmed', kennel: kennel || null, nights, pricePerNight: price, totalAmount: nights * price,
       currency: db.settings.currency, notes: notes ?? '', source: 'admin', createdBy: user.id, createdAt: now, updatedAt: now,
+      payments: [],
     };
     db.bookings.push(booking);
     return ok(withDog(booking), 201);
@@ -303,21 +340,99 @@ const routes: Array<[string, string, Handler]> = [
     return ok(withDog(booking));
   }],
 
+  // Payments on a booking
+  ['POST', '/bookings/:id/payments', (ctx) => {
+    const user = requireUser(ctx, ['admin']);
+    const booking = findOr404(db.bookings, ctx.params.id, 'Booking');
+    const { amount, type = 'payment', method = 'cash', note = '', receivedAt } = ctx.body ?? {};
+    const value = Number(amount);
+    if (!(value > 0)) fail(422, 'VALIDATION_ERROR', 'Enter an amount above 0.');
+    if (!['advance', 'payment', 'refund'].includes(type)) fail(422, 'VALIDATION_ERROR', 'Invalid payment type.');
+    if (!['cash', 'upi', 'card', 'bank'].includes(method)) fail(422, 'VALIDATION_ERROR', 'Invalid payment method.');
+    const { amountPaid, balanceDue } = paymentTotals(booking);
+    if (type === 'refund' && value > amountPaid) fail(422, 'VALIDATION_ERROR', `Refund can't be more than the ₹${amountPaid} received.`);
+    if (type !== 'refund' && booking.status === 'cancelled') fail(422, 'INVALID_STATE', 'This booking is cancelled - record a refund instead.');
+    if (type !== 'refund' && value > balanceDue) {
+      fail(422, 'OVERPAYMENT', `Only ₹${Math.max(0, balanceDue)} is due on this booking.`, { balanceDue });
+    }
+    const at = receivedAt ? new Date(receivedAt) : new Date();
+    if (Number.isNaN(at.getTime())) fail(422, 'VALIDATION_ERROR', 'Invalid payment date.');
+    booking.payments.push({ id: newId('p'), amount: value, type, method, note: String(note).trim(), receivedAt: at.toISOString(), recordedBy: user.id });
+    booking.updatedAt = nowIso();
+    return ok(withDog(booking), 201);
+  }],
+  ['DELETE', '/bookings/:id/payments/:paymentId', (ctx) => {
+    requireUser(ctx, ['admin']);
+    const booking = findOr404(db.bookings, ctx.params.id, 'Booking');
+    findOr404(booking.payments, ctx.params.paymentId, 'Payment');
+    booking.payments = booking.payments.filter((p) => p.id !== ctx.params.paymentId);
+    booking.updatedAt = nowIso();
+    return ok(withDog(booking));
+  }],
+
+  // Billing: stays that check in within [from, to)
+  ['GET', '/admin/billing', (ctx) => {
+    requireUser(ctx, ['admin']);
+    const f = ctx.query.from ? ms(ctx.query.from) : -Infinity;
+    const t = ctx.query.to ? ms(ctx.query.to) : Infinity;
+    const inRange = db.bookings.filter((b) => b.status !== 'cancelled' && ms(b.checkIn) >= f && ms(b.checkIn) < t).map(withDog);
+    const open = db.bookings.filter((b) => b.status !== 'cancelled').map(withDog).filter((b) => b.balanceDue > 0);
+    return ok({
+      from: ctx.query.from ?? null,
+      to: ctx.query.to ?? null,
+      currency: db.settings.currency,
+      bookings: inRange.length,
+      expected: inRange.reduce((n, b) => n + b.totalAmount, 0),
+      received: inRange.reduce((n, b) => n + b.amountPaid, 0),
+      due: inRange.reduce((n, b) => n + Math.max(0, b.balanceDue), 0),
+      advances: inRange.reduce((n, b) => n + b.payments.filter((p) => p.type === 'advance').reduce((x, p) => x + p.amount, 0), 0),
+      paidCount: inRange.filter((b) => b.paymentStatus === 'paid' || b.paymentStatus === 'overpaid').length,
+      partialCount: inRange.filter((b) => b.paymentStatus === 'partial').length,
+      unpaidCount: inRange.filter((b) => b.paymentStatus === 'unpaid').length,
+      outstandingAllTime: open.reduce((n, b) => n + b.balanceDue, 0),
+      outstandingBookings: open.length,
+    });
+  }],
+
   // Settings
   ['GET', '/settings', (ctx) => (requireUser(ctx, STAFF), ok(db.settings))],
   ['PATCH', '/settings', (ctx) => {
     requireUser(ctx, ['admin']);
     const { capacity, pricePerNight, defaultCheckInTime, defaultCheckOutTime, facilityName } = ctx.body ?? {};
-    if (capacity !== undefined && !(Number.isInteger(capacity) && capacity > 0)) fail(422, 'VALIDATION_ERROR', 'Capacity must be a whole number above 0.');
+    if (capacity !== undefined) {
+      if (!(Number.isInteger(capacity) && capacity > 0 && capacity <= 500)) fail(422, 'VALIDATION_ERROR', 'Capacity must be a whole number between 1 and 500.');
+      const checkedIn = db.bookings.filter((b) => b.status === 'checked_in').length;
+      if (capacity < checkedIn) {
+        fail(422, 'CAPACITY_BELOW_OCCUPANCY', `${checkedIn} dogs are checked in right now. Capacity can't be lower than that.`, { checkedIn });
+      }
+    }
+    if (pricePerNight !== undefined && !(Number(pricePerNight) >= 0)) fail(422, 'VALIDATION_ERROR', 'Price per night must be 0 or more.');
+    const isTime = (v: unknown) => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+    if (defaultCheckInTime !== undefined && !isTime(defaultCheckInTime)) fail(422, 'VALIDATION_ERROR', 'Check-in time must be HH:mm.');
+    if (defaultCheckOutTime !== undefined && !isTime(defaultCheckOutTime)) fail(422, 'VALIDATION_ERROR', 'Check-out time must be HH:mm.');
+    if (facilityName !== undefined && !String(facilityName).trim()) fail(422, 'VALIDATION_ERROR', 'Facility name is required.');
     Object.assign(
       db.settings,
       capacity !== undefined && { capacity },
       pricePerNight !== undefined && { pricePerNight: Number(pricePerNight) },
-      defaultCheckInTime && { defaultCheckInTime },
-      defaultCheckOutTime && { defaultCheckOutTime },
-      facilityName && { facilityName },
+      defaultCheckInTime !== undefined && { defaultCheckInTime },
+      defaultCheckOutTime !== undefined && { defaultCheckOutTime },
+      facilityName !== undefined && { facilityName: String(facilityName).trim() },
     );
     return ok(db.settings);
+  }],
+
+  // Occupancy calendar: per-day stats for [from, to) local dates (max 62 days)
+  ['GET', '/admin/occupancy', (ctx) => {
+    requireUser(ctx, STAFF);
+    const from = parseDateKey(ctx.query.from);
+    const to = parseDateKey(ctx.query.to);
+    if (from === null || to === null || to <= from) fail(422, 'VALIDATION_ERROR', 'from and to must be YYYY-MM-DD with to after from.');
+    const days: ReturnType<typeof dayStats>[] = [];
+    for (let d = new Date(from!); d.getTime() < to! && days.length < 62; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
+      days.push(dayStats(d.getTime()));
+    }
+    return ok({ capacity: db.settings.capacity, days });
   }],
 
   // Dashboard
@@ -345,14 +460,16 @@ const routes: Array<[string, string, Handler]> = [
         .filter((b) => b.status === 'confirmed' && inRange(b.checkIn, now, now + 7 * DAY))
         .sort(byCheckIn).map(withDog),
       occupancyNext7Days: Array.from({ length: 7 }, (_, i) => {
-        const start = todayStart + i * DAY;
-        return {
-          date: localDateKey(new Date(start)),
-          count: db.bookings.filter((b) => OCCUPYING.includes(b.status) && overlaps(start, start + DAY, ms(b.checkIn), ms(b.checkOut))).length,
-        };
+        const d = new Date(todayStart);
+        const s0 = dayStats(new Date(d.getFullYear(), d.getMonth(), d.getDate() + i).getTime());
+        return { date: s0.date, count: s0.occupied };
       }),
       activeDogs: db.dogs.filter((d) => d.status === 'active').length,
       bookingsThisMonth: db.bookings.filter((b) => b.status !== 'cancelled' && overlaps(monthStart, monthEnd, ms(b.checkIn), ms(b.checkOut))).length,
+      ...(() => {
+        const due = db.bookings.filter((b) => b.status !== 'cancelled').map(withDog).filter((b) => b.balanceDue > 0);
+        return { paymentsDue: due.reduce((n, b) => n + b.balanceDue, 0), paymentsDueBookings: due.length };
+      })(),
     });
   }],
 ];

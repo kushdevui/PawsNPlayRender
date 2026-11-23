@@ -6,5 +6,7 @@ export const queryKeys = {
   booking: (id: string) => ['bookings', 'detail', id] as const,
   settings: ['settings'] as const,
   dashboard: ['admin', 'dashboard'] as const,
+  occupancy: (from: string, to: string) => ['admin', 'occupancy', from, to] as const,
+  billing: (from: string, to: string) => ['admin', 'billing', from, to] as const,
   users: (params?: object) => ['users', params ?? {}] as const,
 };

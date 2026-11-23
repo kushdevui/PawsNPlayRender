@@ -2,8 +2,8 @@
 // never axios directly. Same code works with mocks and with the real backend.
 import { api } from '../client';
 import type {
-  ApiItem, ApiList, AuthResponse, Booking, BookingFilters, BookingInput, BookingStatus,
-  DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, Role, User, UserStatus,
+  ApiItem, ApiList, AuthResponse, BillingSummary, Booking, BookingFilters, BookingInput, BookingStatus, PaymentInput,
+  DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, OccupancyCalendar, Role, User, UserStatus,
 } from '../types';
 
 const item = <T>(p: Promise<{ data: ApiItem<T> }>) => p.then((r) => r.data.data);
@@ -42,6 +42,8 @@ export const bookingsApi = {
   update: (id: string, body: Partial<BookingInput>) => item<Booking>(api.patch(`/bookings/${id}`, body)),
   setStatus: (id: string, status: Exclude<BookingStatus, 'pending'>) =>
     item<Booking>(api.patch(`/bookings/${id}/status`, { status })),
+  addPayment: (id: string, body: PaymentInput) => item<Booking>(api.post(`/bookings/${id}/payments`, body)),
+  removePayment: (id: string, paymentId: string) => item<Booking>(api.delete(`/bookings/${id}/payments/${paymentId}`)),
 };
 
 export const settingsApi = {
@@ -51,4 +53,8 @@ export const settingsApi = {
 
 export const adminApi = {
   dashboard: () => item<DashboardStats>(api.get('/admin/dashboard')),
+  /** Billing for stays checking in within [from, to) (ISO). */
+  billing: (from: string, to: string) => item<BillingSummary>(api.get('/admin/billing', { params: { from, to } })),
+  /** Per-day occupancy for local dates [from, to), 'YYYY-MM-DD'. */
+  occupancy: (from: string, to: string) => item<OccupancyCalendar>(api.get('/admin/occupancy', { params: { from, to } })),
 };

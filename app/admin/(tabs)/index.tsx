@@ -1,16 +1,19 @@
 // Admin dashboard: live capacity, today's arrivals/departures, next 7 days.
+import { useState } from 'react';
 import { Alert, RefreshControl, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import type { Booking } from '@/api/types';
 import { useSession } from '@/auth/session';
-import { AppText, Button, Card, ProgressBar, Screen, SectionHeader, StateView } from '@/components/common';
+import { AppText, Button, Card, PickerField, ProgressBar, Screen, SectionHeader, SelectSheet, StateView } from '@/components/common';
 import { BookingCard } from '@/features/bookings/BookingCard';
 import { useSetBookingStatus } from '@/features/bookings/hooks';
-import { OccupancyChart } from '@/features/dashboard/OccupancyChart';
+import { OccupancyCalendar } from '@/features/dashboard/OccupancyCalendar';
 import { useDashboard } from '@/features/dashboard/hooks';
+import { useDogOptions } from '@/features/dogs/hooks';
+import { CapacitySheet } from '@/features/settings/CapacitySheet';
 import { makeStyles } from '@/theme';
 import { formatDate } from '@/utils/date';
-import { plural } from '@/utils/format';
+import { formatPrice, plural } from '@/utils/format';
 
 const openBooking = (b: Booking) => router.push({ pathname: '/admin/booking/[id]', params: { id: b.id } });
 
@@ -19,6 +22,9 @@ export default function AdminDashboard() {
   const name = useSession((s) => s.user?.name.split(' ')[0]);
   const { data, isLoading, error, refetch, isRefetching } = useDashboard();
   const setStatus = useSetBookingStatus();
+  const dogOptions = useDogOptions(true);
+  const [editingCapacity, setEditingCapacity] = useState(false);
+  const [findingDog, setFindingDog] = useState(false);
 
   const changeStatus = (b: Booking, status: 'checked_in' | 'checked_out') =>
     setStatus.mutate({ id: b.id, status }, { onError: (e) => Alert.alert('Could not update', e.message) });
@@ -52,13 +58,14 @@ export default function AdminDashboard() {
         <Card>
           <View style={styles.between}>
             <AppText variant="label" color="textMuted">IN BOARDING NOW</AppText>
-            <AppText variant="caption">{plural(data.availableNow, 'kennel')} free</AppText>
+            <Button title="Edit capacity" variant="link" onPress={() => setEditingCapacity(true)} />
           </View>
           <View style={styles.capacityRow}>
             <AppText variant="display">{data.occupiedNow}</AppText>
             <AppText variant="subheading" color="textMuted"> / {data.capacity} dogs</AppText>
           </View>
           <ProgressBar value={ratio} />
+          <AppText variant="caption">{plural(data.availableNow, 'kennel')} free right now</AppText>
         </Card>
 
         {/* Today at a glance */}
@@ -77,17 +84,28 @@ export default function AdminDashboard() {
           </Card>
         </View>
 
+        {/* Money to collect */}
+        <Card onPress={() => router.push('/admin/billing')} accessibilityLabel="Payments due">
+          <View style={styles.between}>
+            <View>
+              <AppText variant="label" color="textMuted">PAYMENTS DUE</AppText>
+              <AppText variant="caption">{plural(data.paymentsDueBookings, 'booking')} · tap for billing</AppText>
+            </View>
+            <AppText variant="subheading">{formatPrice(data.paymentsDue)}</AppText>
+          </View>
+        </Card>
+
         <View style={styles.actions}>
           <Button title="New booking" icon="calendar-plus" onPress={() => router.push('/admin/booking/new')} style={styles.flex} fullWidth />
           <Button title="Add dog" icon="paw" variant="outline" onPress={() => router.push('/admin/dog/new')} style={styles.flex} fullWidth />
         </View>
 
-        {/* Next 7 days */}
-        <SectionHeader title="Next 7 days" />
-        <Card>
-          <OccupancyChart days={data.occupancyNext7Days} capacity={data.capacity} />
-          <AppText variant="caption" align="center">Dogs booked per day · capacity {data.capacity}</AppText>
-        </Card>
+        {/* Dog lookup - opens the dog's profile with full stay history */}
+        <PickerField label="Find a dog" displayValue="" placeholder="Search by dog, owner or phone" icon="magnify" onPress={() => setFindingDog(true)} />
+
+        {/* Occupancy calendar */}
+        <SectionHeader title="Occupancy calendar" />
+        <OccupancyCalendar />
 
         {/* Today */}
         <SectionHeader title="Arriving today" count={data.todayCheckIns.length} />
@@ -120,6 +138,23 @@ export default function AdminDashboard() {
           <BookingCard key={b.id} booking={b} highlight="checkIn" onPress={() => openBooking(b)} />
         ))}
       </ScrollView>
+
+      <CapacitySheet
+        visible={editingCapacity}
+        onDismiss={() => setEditingCapacity(false)}
+        capacity={data.capacity}
+        occupiedNow={data.occupiedNow}
+      />
+      <SelectSheet
+        visible={findingDog}
+        onDismiss={() => setFindingDog(false)}
+        title="Find a dog"
+        options={dogOptions.options}
+        value={null}
+        onSelect={(id) => router.push({ pathname: '/admin/dog/[id]', params: { id } })}
+        searchable
+        emptyText={dogOptions.isLoading ? 'Loading dogs…' : 'No dogs found'}
+      />
     </Screen>
   );
 }

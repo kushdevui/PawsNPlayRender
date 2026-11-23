@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dogsApi } from '@/api/endpoints';
 import type { DogInput, DogStatus } from '@/api/types';
@@ -17,7 +18,7 @@ const useInvalidateDogs = () => {
   return () => {
     qc.invalidateQueries({ queryKey: ['dogs'] });
     qc.invalidateQueries({ queryKey: ['bookings'] }); // bookings embed dog name/owner
-    qc.invalidateQueries({ queryKey: queryKeys.dashboard });
+    qc.invalidateQueries({ queryKey: ['admin'] }); // dashboard + occupancy calendar
   };
 };
 
@@ -29,4 +30,19 @@ export const useCreateDog = () => {
 export const useUpdateDog = (id: string) => {
   const invalidate = useInvalidateDogs();
   return useMutation({ mutationFn: (body: Partial<DogInput>) => dogsApi.update(id, body), onSuccess: invalidate });
+};
+
+/** Dog choices for pickers/filters. `includeArchived` for history lookups. */
+export const useDogOptions = (includeArchived = false) => {
+  const { data, isLoading } = useDogs({ status: includeArchived ? 'all' : 'active' });
+  const options = useMemo(
+    () =>
+      (data?.data ?? []).map((d) => ({
+        value: d.id,
+        label: d.status === 'archived' ? `${d.name} (archived)` : d.name,
+        description: `${d.breed} · ${d.ownerName} · ${d.ownerPhone}`,
+      })),
+    [data],
+  );
+  return { options, isLoading };
 };

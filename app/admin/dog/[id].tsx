@@ -6,6 +6,7 @@ import { AppText, Avatar, Badge, Button, Card, InfoRow, InlineAlert, Screen, Sec
 import { BookingCard } from '@/features/bookings/BookingCard';
 import { useBookings } from '@/features/bookings/hooks';
 import { DogForm } from '@/features/dogs/DogForm';
+import { DogHistorySummary } from '@/features/dogs/DogHistorySummary';
 import { useDog, useUpdateDog } from '@/features/dogs/hooks';
 import { temperamentLabel, temperamentTone } from '@/features/dogs/options';
 import { makeStyles } from '@/theme';
@@ -42,7 +43,13 @@ export default function DogDetail() {
     ]);
   };
 
-  const stays = [...(bookings.data?.data ?? [])].sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+  const all = bookings.data?.data ?? [];
+  const active = all
+    .filter((b) => b.status === 'checked_in' || b.status === 'confirmed' || b.status === 'pending')
+    .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+  const past = all
+    .filter((b) => b.status === 'checked_out' || b.status === 'cancelled')
+    .sort((a, b) => b.checkIn.localeCompare(a.checkIn));
 
   if (editing) {
     return (
@@ -113,12 +120,23 @@ export default function DogDetail() {
         />
       </View>
 
-      <SectionHeader title="Stays" count={stays.length} />
-      {bookings.isLoading && <StateView loading />}
-      {!bookings.isLoading && stays.length === 0 && <AppText variant="caption">No bookings yet.</AppText>}
-      {stays.map((b) => (
-        <BookingCard key={b.id} booking={b} onPress={() => router.push({ pathname: '/admin/booking/[id]', params: { id: b.id } })} />
-      ))}
+      {bookings.isLoading ? (
+        <StateView loading />
+      ) : (
+        <>
+          <DogHistorySummary bookings={all} />
+          <SectionHeader title="Current & upcoming" count={active.length} />
+          {active.length === 0 && <AppText variant="caption">No current or upcoming stays.</AppText>}
+          {active.map((b) => (
+            <BookingCard key={b.id} booking={b} onPress={() => router.push({ pathname: '/admin/booking/[id]', params: { id: b.id } })} />
+          ))}
+          <SectionHeader title="Past stays" count={past.length} />
+          {past.length === 0 && <AppText variant="caption">No past stays yet.</AppText>}
+          {past.map((b) => (
+            <BookingCard key={b.id} booking={b} onPress={() => router.push({ pathname: '/admin/booking/[id]', params: { id: b.id } })} />
+          ))}
+        </>
+      )}
     </Screen>
   );
 }

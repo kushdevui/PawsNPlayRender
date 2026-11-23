@@ -22,6 +22,8 @@ Dates: ISO-8601 UTC strings. The app sends/receives UTC and shows local time.
 | 422 | CAPACITY_FULL | peak occupancy in the dates would exceed capacity (`details.peak`, `details.capacity`) |
 | 422 | INVALID_STATE | status change / edit not allowed from current status |
 | 422 | HAS_OPEN_BOOKINGS | archiving a dog with open stays |
+| 422 | OVERPAYMENT | payment larger than the balance due (`details.balanceDue`) |
+| 422 | CAPACITY_BELOW_OCCUPANCY | capacity set lower than dogs checked in now |
 
 ## Endpoints
 | Method | Path | Roles | Notes |
@@ -37,14 +39,23 @@ Dates: ISO-8601 UTC strings. The app sends/receives UTC and shows local time.
 | GET | /dogs/:id | admin, staff | |
 | POST | /dogs | admin | name, ownerName, ownerPhone required |
 | PATCH | /dogs/:id | admin | partial update; `status: archived` blocked while open stays exist |
-| GET | /bookings | admin, staff | `from`,`to` (overlap), `status`, `dogId`; sorted by checkIn; includes `dog` summary |
+| GET | /bookings | admin, staff | `from`,`to` (overlap), `status`, `dogId`, `paymentStatus` (`due` = balance > 0); sorted by checkIn; includes `dog` summary and payment totals |
 | GET | /bookings/:id | admin, staff | |
 | POST | /bookings | admin | `{dogId, checkIn, checkOut, kennel?, pricePerNight?, notes?}` -> status `confirmed` |
 | PATCH | /bookings/:id | admin | edit dates/dog/kennel/price/notes (confirmed or checked_in only) |
 | PATCH | /bookings/:id/status | admin, staff | check in / check out / cancel (see state machine) |
+| POST | /bookings/:id/payments | admin | `{amount, type: advance\|payment\|refund, method: cash\|upi\|card\|bank, note?, receivedAt?}` |
+| DELETE | /bookings/:id/payments/:paymentId | admin | remove a mistaken payment |
 | GET | /settings | admin, staff | capacity, default times, price |
-| PATCH | /settings | admin | |
-| GET | /admin/dashboard | admin, staff | capacity, occupiedNow, today in/out, next 7 days, upcoming |
+| PATCH | /settings | admin | capacity (≥ dogs checked in now), pricePerNight, default times, facilityName |
+| GET | /admin/dashboard | admin, staff | capacity, occupiedNow, today in/out, next 7 days, upcoming, paymentsDue |
+| GET | /admin/occupancy | admin, staff | `from`,`to` = `YYYY-MM-DD`; per day: occupied (peak), available, checkIns, checkOuts |
+| GET | /admin/billing | admin | `from`,`to` ISO; stays checking in that range: expected, received, due, advances, counts, outstanding all-time |
+
+## Booking money fields (derived by server)
+- `amountPaid` = Σ advances + payments − refunds
+- `balanceDue` = (cancelled ? 0 : totalAmount) − amountPaid (negative = to refund)
+- `paymentStatus` = `paid` (balance 0) · `partial` · `unpaid` · `overpaid` (balance < 0)
 
 ## Booking status flow
 ```

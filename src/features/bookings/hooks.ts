@@ -3,8 +3,12 @@ import { bookingsApi } from '@/api/endpoints';
 import type { BookingFilters, BookingInput, BookingStatus } from '@/api/types';
 import { queryKeys } from '../queryKeys';
 
-export const useBookings = (filters?: BookingFilters) =>
-  useQuery({ queryKey: queryKeys.bookings(filters), queryFn: () => bookingsApi.list({ limit: 500, ...filters }) });
+export const useBookings = (filters?: BookingFilters, options?: { enabled?: boolean }) =>
+  useQuery({
+    queryKey: queryKeys.bookings(filters),
+    queryFn: () => bookingsApi.list({ limit: 500, ...filters }),
+    enabled: options?.enabled ?? true,
+  });
 
 export const useBooking = (id: string | undefined) =>
   useQuery({ queryKey: queryKeys.booking(id ?? ''), queryFn: () => bookingsApi.get(id!), enabled: !!id });
@@ -13,7 +17,7 @@ const useInvalidateBookings = () => {
   const qc = useQueryClient();
   return () => {
     qc.invalidateQueries({ queryKey: ['bookings'] });
-    qc.invalidateQueries({ queryKey: queryKeys.dashboard });
+    qc.invalidateQueries({ queryKey: ['admin'] }); // dashboard + occupancy calendar
   };
 };
 

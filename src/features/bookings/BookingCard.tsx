@@ -3,7 +3,8 @@ import type { Booking } from '@/api/types';
 import { AppText, Badge, Button, Card, Icon } from '@/components/common';
 import { makeStyles } from '@/theme';
 import { formatStayRange, formatTime } from '@/utils/date';
-import { plural } from '@/utils/format';
+import { formatPrice, plural } from '@/utils/format';
+import { paymentBadgeLabel, paymentStatusTone } from '@/features/payments/labels';
 import { bookingStatusLabel, bookingStatusTone } from './status';
 
 interface Props {
@@ -39,6 +40,10 @@ export function BookingCard({ booking: b, onPress, action, highlight }: Props) {
             ? `Check-in ${formatTime(b.checkIn)}`
             : `In ${formatTime(b.checkIn)} · Out ${formatTime(b.checkOut)}`}
       </AppText>
+      <View style={styles.money}>
+        <AppText variant="bodyStrong">{formatPrice(b.totalAmount, b.currency)}</AppText>
+        <Badge label={paymentBadgeLabel(b)} tone={b.status === 'cancelled' ? 'neutral' : paymentStatusTone[b.paymentStatus]} />
+      </View>
       {action && (
         <Button title={action.label} size="sm" variant="secondary" onPress={action.onPress} loading={action.loading} style={styles.action} />
       )}
@@ -52,4 +57,5 @@ const useStyles = makeStyles((t) => ({
   shrink: { flexShrink: 1 },
   meta: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: t.spacing.xs },
   action: { marginTop: t.spacing.sm },
+  money: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: t.spacing.xs },
 }));

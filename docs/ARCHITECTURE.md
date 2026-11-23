@@ -1,7 +1,7 @@
 # Paws N' Play - Architecture & Requirements
 
 > Living document. Update it whenever scope, data model or API changes.
-> Last updated: 23 Nov 2026 - Phase 1 (admin boarding board).
+> Last updated: 23 Nov 2026 - Phase 1 (admin boarding board: capacity, occupancy calendar, dog history, payments & billing).
 
 ## 1. Product overview
 
@@ -22,7 +22,9 @@ An **admin board** for managing boarding manually:
 - Create bookings by hand: **check-in date + time -> check-out date + time**.
 - Manage bookings: edit, check in, check out, cancel.
 - Filter bookings by **month**, a specific **date**, and **status**.
-- A **dashboard**: live capacity, today's arrivals/departures, upcoming stays, next-7-day occupancy.
+- A **dashboard**: live capacity (editable), today's arrivals/departures, upcoming stays, an **occupancy calendar**, payments due, dog lookup.
+- **Dog history**: every stay a dog has had, with totals.
+- **Payments & billing**: record advances/payments/refunds per booking; monthly expected / received / due.
 
 Customer accounts are not linked yet: owner name/phone live on the dog. Later each dog gets an
 `ownerId` (customer user) and customer-app bookings arrive as `pending` for admin approval.
@@ -54,10 +56,30 @@ Customer accounts are not linked yet: owner name/phone live on the dog. Later ea
 
 **Dashboard**
 - F12. In boarding now: checked-in count / capacity, free kennels, progress bar (warning ≥ 80%, red at full).
-- F13. Today: number of check-ins and check-outs, stays this month.
-- F14. Next 7 days occupancy chart (dogs booked per day vs capacity).
+  **Edit capacity** from this card (cannot go below dogs checked in now).
+- F13. Today: number of check-ins and check-outs, stays this month; **payments due** (amount + bookings) -> Billing.
+- F14. **Occupancy calendar**: month view, each day shows peak dogs booked / capacity, coloured
+  (space / 80%+ / full), dot when dogs arrive. Tap a day -> sheet with booked/free, arriving / staying /
+  leaving dogs (tap -> booking), and "New booking from this date". Past days faded.
 - F15. Lists: arriving today (with "Check in"), leaving today (with "Check out"), upcoming 7 days.
-- F16. Quick actions: New booking, Add dog. Pull to refresh; auto-refresh every 60 s.
+- F16. Quick actions: New booking, Add dog, **Find a dog** (search -> dog profile). Pull to refresh; auto-refresh 60 s.
+
+**Dog history**
+- F17. Bookings tab **Dog** filter: shows that dog's stays across all months (newest first) with a
+  summary: stays, nights, total amount, with-us-now / next visit, last visit, cancellations.
+- F18. Dog profile shows the same summary, split into Current & upcoming and Past stays.
+
+**Payments & billing**
+- F19. Each booking has payments: type (advance / payment / refund), amount, method (UPI / cash / card / bank),
+  date received, note. Booking shows Total / Received / Due with progress; payments list with Remove (fix mistakes).
+- F20. "Record advance / payment / refund" sheet with quick amounts (50% advance, full balance, full refund).
+  Cannot pay more than the balance; refunds cannot exceed what was received; cancelled stays accept refunds only.
+- F21. Booking cards show amount and a payment badge (Paid / ₹X due / Unpaid / Refund ₹X).
+- F22. **Billing tab**: month switcher; for stays **checking in** that month: Expected, Received, Due, % collected,
+  advances, paid/part-paid/unpaid counts; total outstanding across all months; list filter Due / Paid / All.
+
+**Settings**
+- F23. Boarding settings (Profile -> Boarding settings): capacity, price per night, default check-in/out times, facility name.
 
 ### 2.2 Non-functional
 - Android + iOS from one codebase; runs in Expo Go during development.
@@ -104,16 +126,17 @@ app/                         Expo Router routes
   (auth)/login, register
   admin/
     _layout.tsx              RoleGate(admin) + Stack
-    (tabs)/                  Dashboard | Bookings | Dogs | Profile
+    (tabs)/                  Dashboard | Bookings | Billing | Dogs | Profile
     booking/new, booking/[id]
     dog/new, dog/[id]
+    settings                 boarding settings
   user/, staff/              placeholders (Phase 2+)
 src/
   api/                       client.ts, types.ts, endpoints/, mock/ (adapter, routes, db)
   auth/                      session store, token storage, RoleGate, roles, permissions
   components/common/         UI kit (see 4.3)
   components/navigation/     tab/stack options, tab icons
-  features/                  bookings/, dogs/, dashboard/ - hooks + feature components
+  features/                  bookings/, dogs/, dashboard/ (calendar, day sheet), payments/, settings/ - hooks + feature components
   theme/                     palette -> themes -> paperTheme, ThemeProvider, makeStyles
   utils/                     date.ts (local date/time helpers), format.ts
 mock/                        endpoints.json + data/ (users, dogs, bookings, settings)
@@ -127,7 +150,7 @@ theme generated from the tokens). Screens use `makeStyles((t) => ...)` / `useThe
 Contrast rule: pink fills carry black text; pink text on white uses `colors.primaryText`.
 
 ### 4.3 Common components (`src/components/common`)
-AppText, Button, TextInput, PickerField, DateField, TimeField, Calendar, SelectField, Chip,
+AppText, Button, TextInput, NumberStepper, PickerField, DateField, TimeField, Calendar, SelectField, SelectSheet, Chip,
 SegmentedControl, SwitchField, SearchBar, Card, Badge, Avatar, InfoRow, SectionHeader, Divider,
 InlineAlert, ProgressBar, MonthSwitcher, Sheet, Fab, Icon, Logo, Screen, StateView.
 Screens never import Paper directly. Date/time pickers are pure JS (work in Expo Go).
@@ -184,9 +207,15 @@ Indexes: `{ status: 1, name: 1 }`, text index on `name, breed, ownerName, ownerP
 | notes | string | |
 | source | `admin` \| `app` | who created it |
 | createdBy | ObjectId -> users | |
+| payments | [Payment] | embedded: `{_id, amount (>0), type: advance\|payment\|refund, method: cash\|upi\|card\|bank, note, receivedAt, recordedBy}` |
 | statusHistory (later) | [{status, at, by}] | audit trail |
 
-Indexes: `{ checkIn: 1, checkOut: 1 }`, `{ status: 1, checkIn: 1 }`, `{ dogId: 1, checkIn: -1 }`.
+Derived in API responses (not stored): `amountPaid = Σ advance + payment − refund`,
+`balanceDue = (cancelled ? 0 : totalAmount) − amountPaid`, `paymentStatus = paid | partial | unpaid | overpaid`.
+Payments are embedded (always read with the booking, small count). If reporting needs grow, move to a
+`payments` collection with `{ bookingId, receivedAt }` index.
+
+Indexes: `{ checkIn: 1, checkOut: 1 }`, `{ status: 1, checkIn: 1 }`, `{ dogId: 1, checkIn: -1 }`, `{ 'payments.receivedAt': 1 }`.
 API responses add a `dog` summary (`$lookup` / `populate`) for lists.
 
 ### settings (single document)
@@ -209,7 +238,15 @@ API responses add a `dog` summary (`$lookup` / `populate`) for lists.
 7. **Archiving a dog** is refused while it has open stays (`HAS_OPEN_BOOKINGS`).
 8. **Filters**: list endpoints return stays **overlapping** `[from, to)` - a stay from 28 Nov to 3 Dec
    appears in both November and December, and on every date it covers.
-9. **Dashboard** (computed in facility local time): occupiedNow = `checked_in` count;
+9. **Occupancy calendar**: for each local day, `occupied` = **peak** number of dogs present at the same
+   time that day (a dog leaving 11:00 and one arriving 20:00 share one kennel); `available = capacity − occupied`.
+   Today and future count `confirmed|checked_in`; past days also count `checked_out` so history is accurate.
+10. **Capacity changes**: capacity cannot be set below the number of dogs checked in now
+   (`CAPACITY_BELOW_OCCUPANCY`). Lowering it below future bookings is allowed - those days show as full/over.
+11. **Payments**: amount > 0; advance/payment cannot exceed `balanceDue` (`OVERPAYMENT`); refund cannot exceed
+   `amountPaid`; cancelled bookings accept refunds only. Editing a stay can make it overpaid (shows "to refund").
+12. **Billing** groups money by the stay's **check-in month**; cancelled stays are excluded from expected/received.
+13. **Dashboard** (computed in facility local time): occupiedNow = `checked_in` count;
    today's check-ins = stays starting today (confirmed/checked_in/checked_out);
    today's check-outs = stays ending today (checked_in/checked_out);
    upcoming = `confirmed` stays starting in the next 7 days; occupancy per day = occupying stays overlapping that day.
@@ -229,13 +266,15 @@ Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ d
 | Screen | Route | Purpose |
 |---|---|---|
 | Login | `/login` | email/password, admin quick-fill in mock mode |
-| Dashboard | `/admin` | capacity, today, 7-day chart, arrivals/departures/upcoming |
-| Bookings | `/admin/bookings` | month switcher, date picker filter, status chips, list, + New booking |
+| Dashboard | `/admin` | capacity (edit), payments due, dog lookup, occupancy calendar, arrivals/departures/upcoming |
+| Bookings | `/admin/bookings` | month switcher, dog filter (all-time history), date filter, status chips, + New booking |
+| Billing | `/admin/billing` | month expected/received/due, outstanding, due/paid list |
+| Boarding settings | `/admin/settings` | capacity, price per night, default times |
 | New booking | `/admin/booking/new?dogId=&date=` | booking form |
-| Booking detail | `/admin/booking/[id]` | info, check in/out/cancel, edit |
+| Booking detail | `/admin/booking/[id]` | info, check in/out/cancel, payments (record/remove), edit |
 | Dogs | `/admin/dogs` | search, active/archived, + Add dog |
 | Add dog | `/admin/dog/new` | dog form |
-| Dog detail | `/admin/dog/[id]` | profile, stays, new booking, edit, archive |
+| Dog detail | `/admin/dog/[id]` | profile, stay history summary, current/upcoming + past stays, new booking, edit, archive |
 | Profile | `/admin/profile` | user info, log out |
 
 ## 10. Roadmap
@@ -243,9 +282,10 @@ Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ d
 - **Phase 2**: Node API + MongoDB per this document; switch `USE_MOCKS=false`; settings screen (capacity, prices, default times); admin user management.
 - **Phase 3**: Customer app - sign up, link dogs (`ownerId`), request stays (`pending`), admin approval, push notifications.
 - **Phase 4**: Staff app - check-in/out, daily care log (feeding, walks, meds, photos for owners), kennel map.
-- Later: payments/invoices, reports (occupancy, revenue), vaccination expiry alerts, waitlist when full.
+- Later: invoices/receipts (PDF/WhatsApp), online payments, reports (occupancy, revenue by month), vaccination expiry alerts, waitlist when full.
 
 ## 11. Open questions
+- Billing month: by check-in date (current) or split revenue across the nights of each month?
 - Pricing: flat per night, or different for weekends / dog size / peak season?
 - Should late check-out (after default time) add a charge or a half day?
 - Kennel assignment: free text now - do we need a fixed kennel list with sizes?

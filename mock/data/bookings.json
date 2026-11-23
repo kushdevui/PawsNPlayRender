@@ -14,7 +14,27 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_001",
+        "amount": 2400,
+        "type": "advance",
+        "method": "upi",
+        "note": "Advance at booking",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      },
+      {
+        "id": "p_002",
+        "amount": 2400,
+        "type": "payment",
+        "method": "cash",
+        "note": "Settled at pick-up",
+        "receivedAt": "2026-10-09T12:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_002",
@@ -31,7 +51,27 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_003",
+        "amount": 2400,
+        "type": "advance",
+        "method": "upi",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      },
+      {
+        "id": "p_004",
+        "amount": 2400,
+        "type": "payment",
+        "method": "card",
+        "note": "Settled at pick-up",
+        "receivedAt": "2026-11-06T11:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_003",
@@ -48,7 +88,27 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_005",
+        "amount": 1200,
+        "type": "advance",
+        "method": "upi",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      },
+      {
+        "id": "p_006",
+        "amount": 1200,
+        "type": "refund",
+        "method": "upi",
+        "note": "Refunded on cancellation",
+        "receivedAt": "2026-11-12T12:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_004",
@@ -65,7 +125,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_007",
+        "amount": 3000,
+        "type": "advance",
+        "method": "upi",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_005",
@@ -82,7 +153,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_008",
+        "amount": 4800,
+        "type": "advance",
+        "method": "bank",
+        "note": "Paid in full",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_006",
@@ -99,7 +181,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_009",
+        "amount": 4000,
+        "type": "advance",
+        "method": "cash",
+        "note": "Advance at drop-off",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_007",
@@ -116,7 +209,8 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": []
   },
   {
     "id": "b_008",
@@ -133,7 +227,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_010",
+        "amount": 1200,
+        "type": "advance",
+        "method": "upi",
+        "note": "Paid in full",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_009",
@@ -150,7 +255,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_011",
+        "amount": 5000,
+        "type": "advance",
+        "method": "upi",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_010",
@@ -167,7 +283,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_012",
+        "amount": 2000,
+        "type": "advance",
+        "method": "cash",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_011",
@@ -184,7 +311,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_013",
+        "amount": 3000,
+        "type": "advance",
+        "method": "upi",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_012",
@@ -201,7 +339,8 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": []
   },
   {
     "id": "b_013",
@@ -218,7 +357,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_014",
+        "amount": 3000,
+        "type": "advance",
+        "method": "upi",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_014",
@@ -235,7 +385,8 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": []
   },
   {
     "id": "b_015",
@@ -252,7 +403,18 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_015",
+        "amount": 4000,
+        "type": "advance",
+        "method": "bank",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   },
   {
     "id": "b_016",
@@ -269,7 +431,8 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": []
   },
   {
     "id": "b_017",
@@ -286,6 +449,17 @@
     "source": "admin",
     "createdBy": "u_001",
     "createdAt": "2026-10-01T03:30:00.000Z",
-    "updatedAt": "2026-10-01T03:30:00.000Z"
+    "updatedAt": "2026-10-01T03:30:00.000Z",
+    "payments": [
+      {
+        "id": "p_016",
+        "amount": 1800,
+        "type": "advance",
+        "method": "upi",
+        "note": "Advance",
+        "receivedAt": "2026-10-01T03:30:00.000Z",
+        "recordedBy": "u_001"
+      }
+    ]
   }
 ]
