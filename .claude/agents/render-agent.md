@@ -31,7 +31,8 @@ The backend is a **separate Node.js REST API repo** - never add server code here
 - **Axios** API client with interceptors (auth header, 401 -> refresh/logout)
 - **expo-secure-store** for tokens (never AsyncStorage for tokens)
 - **React Hook Form + Zod** for forms and validation
-- Styling: a shared theme (`src/theme/`) - colors, spacing, typography; no hard-coded colors in screens
+- UI library: **React Native Paper** (Material Design 3), styled by our theme and wrapped by `src/components/common`
+- Styling: our theme in `src/theme/` (see "Theme & common components"); no hard-coded colours/sizes in screens
 - Testing: **Jest (jest-expo) + React Native Testing Library** - not installed yet; add with
   `npx expo install jest-expo jest @testing-library/react-native -- --save-dev` when the first test is written
 - Builds: **EAS Build** (`development`, `preview`, `production` profiles)
@@ -52,12 +53,14 @@ app/                      # Expo Router routes
   # Role areas are real folders, NOT (groups): groups share URLs, so admin/bookings and
   # user/bookings would collide. Each role's _layout.tsx wraps its Tabs in <RoleGate>.
 src/
-  components/ui/          # Screen, AppText, Button, TextField, Card, Badge, StateView
+  components/common/      # THE UI kit (wraps Paper): AppText, Button, TextInput, Card, Badge, Avatar,
+                          # Divider, InlineAlert, Icon, Logo, Screen, StateView
+  components/navigation/  # tabIcon, useTabScreenOptions
   lib/queryClient.ts
   api/                    # client.ts, types.ts, endpoints/, mock/ (adapter + routes)
   features/<feature>/     # hooks, components, logic per feature (pets, bookings, ...)
   auth/                   # session.ts (Zustand), tokenStorage, RoleGate, roles, permissions
-  theme/                  # tokens + useTheme
+  theme/                  # palette -> themes -> Paper theme; ThemeProvider, useTheme, makeStyles
   utils/  constants/
 mock/                     # endpoints.json + data/*.json (mock backend)
 docs/api-contract.md      # endpoints agreed with the backend repo
@@ -95,12 +98,28 @@ The Node API isn't ready yet, so the app runs on **mock JSON** (`EXPO_PUBLIC_USE
 - Type every request/response; validate risky responses with Zod.
 - Handle loading, empty, error and offline states on every data screen.
 
+## Theme & common components (brand rules)
+Brand: white backgrounds, black (`#262727`) text, logo pink (`#C2A1BE`) accents. Minimal, easy to use.
+Logo: `<Logo />` (assets/images/logo.png).
+- **Theme layers** (change look in one place):
+  `palette.ts` (raw brand hex) -> `themes.ts` (semantic names: `colors.primary`, `colors.text`, ...,
+  spacing, radius, sizes, typography) -> `paperTheme.ts` (Paper MD3 theme generated from it).
+  Never put hex values, font sizes or spacing numbers in screens/components; use theme tokens.
+- Styles: `const useStyles = makeStyles((t) => ({ ... t.spacing.lg, t.colors.surface ... }))`, call `useStyles()`
+  in the component. For inline colour needs use `useTheme()`.
+- **Screens use only `@/components/common`** - never import `react-native-paper`, or raw
+  `Text`/`TextInput`/`Pressable`/`Button` for things the kit covers. Need something new? Add a variant/prop
+  to the common component, or a new common component wrapping Paper, then use it.
+- Pink as a fill (`primary`) takes black text (`onPrimary`); pink as TEXT on white uses `colors.primaryText`
+  (white-on-pink and pink text from the logo colour fail contrast).
+- Icons: `Icon` / `icon` props take Material Community Icons names (https://icons.expo.fyi).
+
 ## Code quality
 - Function components + hooks, named exports, files < ~250 lines - split when larger.
 - Lists use `FlatList`/`FlashList`, never `.map` inside `ScrollView` for long data.
 - Accessibility: `accessibilityLabel` on touchables, min 44pt touch targets, dynamic text OK.
 - Test on both platforms; use `Platform.select` / `.ios.tsx` / `.android.tsx` only when needed.
-- Images via `expo-image`; icons via `@expo/vector-icons`.
+- Images via `expo-image` (or the common `Logo`/`Avatar`); icons via the common `Icon` (Material Community Icons).
 
 ## Useful commands
 - `npx expo start` - dev server (press `a` Android, `i` iOS)

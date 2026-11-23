@@ -1,15 +1,16 @@
-import { FlatList, StyleSheet, View } from 'react-native';
-import { AppText, Badge, Card, Screen, StateView } from '@/components/ui';
+import { FlatList, View } from 'react-native';
+import { AppText, Badge, Card, Icon, Screen, StateView } from '@/components/common';
 import { usePets } from '@/features/pets/hooks';
-import { spacing } from '@/theme';
+import { makeStyles } from '@/theme';
 import { ageFrom } from '@/utils/format';
 
 export default function MyPets() {
+  const styles = useStyles();
   const { data, isLoading, error, refetch, isRefetching } = usePets();
 
   return (
     <Screen>
-      <AppText variant="title">My Pets</AppText>
+      <AppText variant="heading">My Pets</AppText>
       {isLoading || error || !data?.data.length ? (
         <StateView loading={isLoading} error={error} empty={!data?.data.length} emptyText="No pets yet. Add your first pet!" onRetry={refetch} />
       ) : (
@@ -22,7 +23,10 @@ export default function MyPets() {
           renderItem={({ item }) => (
             <Card>
               <View style={styles.row}>
-                <AppText variant="heading">{item.species === 'dog' ? '🐶' : '🐱'} {item.name}</AppText>
+                <View style={styles.name}>
+                  <Icon name={item.species === 'dog' ? 'dog' : 'cat'} />
+                  <AppText variant="subheading">{item.name}</AppText>
+                </View>
                 <Badge label={item.vaccinated ? 'Vaccinated' : 'Vaccine due'} tone={item.vaccinated ? 'success' : 'warning'} />
               </View>
               <AppText variant="caption">{item.breed} · {item.gender} · {ageFrom(item.dateOfBirth)} · {item.weightKg} kg</AppText>
@@ -35,7 +39,8 @@ export default function MyPets() {
   );
 }
 
-const styles = StyleSheet.create({
-  list: { gap: spacing.md, paddingBottom: spacing.xl },
+const useStyles = makeStyles((t) => ({
+  list: { gap: t.spacing.md, paddingBottom: t.spacing.xl },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-});
+  name: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
+}));

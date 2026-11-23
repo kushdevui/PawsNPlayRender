@@ -1,6 +1,6 @@
 # PawsNPlay 🐾
 
-React Native app (Expo SDK 58, Expo Router, TypeScript) for **pet parents, staff and admins**.
+React Native app (Expo SDK 58, Expo Router, TypeScript, React Native Paper) for **pet parents, staff and admins**.
 Runs on Android and iOS. The Node.js REST backend lives in a separate repo; until it is ready the
 app runs on mock JSON (`mock/`).
 
@@ -46,9 +46,9 @@ app/                 # routes (Expo Router)
 src/
   api/               # axios client, types, endpoint functions, mock adapter
   auth/              # session store, secure token storage, RoleGate, permissions
-  components/ui/     # shared UI primitives
+  components/common/ # UI kit on React Native Paper (Button, TextInput, Card, ...)
   features/          # data hooks + feature components (bookings, pets, services, admin, profile)
-  theme/             # colors, spacing, typography
+  theme/             # brand palette -> semantic theme -> Paper theme (change look in one place)
 mock/                # mock backend: endpoints.json + data/*.json
 docs/api-contract.md # API contract for the backend repo
 ```

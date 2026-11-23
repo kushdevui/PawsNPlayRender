@@ -1,16 +1,16 @@
 import { Tabs } from 'expo-router';
 import { RoleGate } from '@/auth/RoleGate';
-import { tabIcon } from '@/components/TabIcon';
-import { colors } from '@/theme';
+import { tabIcon, useTabScreenOptions } from '@/components/navigation';
 
 export default function UserLayout() {
+  const screenOptions = useTabScreenOptions();
   return (
     <RoleGate allow={['user']}>
-      <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.primary }}>
-        <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: tabIcon('home-outline') }} />
-        <Tabs.Screen name="pets" options={{ title: 'My Pets', tabBarIcon: tabIcon('paw-outline') }} />
-        <Tabs.Screen name="bookings" options={{ title: 'Bookings', tabBarIcon: tabIcon('calendar-outline') }} />
-        <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: tabIcon('person-outline') }} />
+      <Tabs screenOptions={screenOptions}>
+        <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: tabIcon('home-outline', 'home') }} />
+        <Tabs.Screen name="pets" options={{ title: 'My Pets', tabBarIcon: tabIcon('paw-outline', 'paw') }} />
+        <Tabs.Screen name="bookings" options={{ title: 'Bookings', tabBarIcon: tabIcon('calendar-blank-outline', 'calendar-blank') }} />
+        <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: tabIcon('account-outline', 'account') }} />
       </Tabs>
     </RoleGate>
   );

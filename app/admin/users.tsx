@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import type { Role } from '@/api/types';
 import { roleLabel } from '@/auth/roles';
-import { AppText, Badge, Button, Card, Screen, StateView } from '@/components/ui';
+import { AppText, Badge, Button, Card, Screen, StateView } from '@/components/common';
 import { useUsers } from '@/features/admin/hooks';
-import { spacing } from '@/theme';
+import { makeStyles } from '@/theme';
 
 const FILTERS: Array<{ label: string; role?: Role }> = [
   { label: 'All' },
@@ -14,15 +14,16 @@ const FILTERS: Array<{ label: string; role?: Role }> = [
 ];
 
 export default function AdminUsers() {
+  const styles = useStyles();
   const [role, setRole] = useState<Role | undefined>();
   const { data, isLoading, error, refetch, isRefetching } = useUsers(role ? { role } : undefined);
 
   return (
     <Screen>
-      <AppText variant="title">Users</AppText>
+      <AppText variant="heading">Users</AppText>
       <View style={styles.filters}>
         {FILTERS.map((f) => (
-          <Button key={f.label} size="sm" title={f.label} variant={role === f.role ? 'primary' : 'secondary'} onPress={() => setRole(f.role)} />
+          <Button key={f.label} size="sm" title={f.label} variant={role === f.role ? 'secondary' : 'outline'} onPress={() => setRole(f.role)} />
         ))}
       </View>
       {isLoading || error || !data?.data.length ? (
@@ -37,8 +38,8 @@ export default function AdminUsers() {
           renderItem={({ item }) => (
             <Card>
               <View style={styles.row}>
-                <AppText variant="heading">{item.name}</AppText>
-                <Badge label={roleLabel[item.role]} tone="info" />
+                <AppText variant="subheading">{item.name}</AppText>
+                <Badge label={roleLabel[item.role]} tone="brand" />
               </View>
               <AppText variant="caption">{item.email}</AppText>
               {item.status === 'inactive' && <Badge label="Inactive" tone="danger" />}
@@ -50,8 +51,8 @@ export default function AdminUsers() {
   );
 }
 
-const styles = StyleSheet.create({
-  filters: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  list: { gap: spacing.md, paddingBottom: spacing.xl },
+const useStyles = makeStyles((t) => ({
+  filters: { flexDirection: 'row', gap: t.spacing.sm, flexWrap: 'wrap' },
+  list: { gap: t.spacing.md, paddingBottom: t.spacing.xl },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-});
+}));
