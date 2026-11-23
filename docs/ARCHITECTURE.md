@@ -39,7 +39,9 @@ Customer accounts are not linked yet: owner name/phone live on the dog. Later ea
 **Dogs**
 - F3. List dogs; search by dog name, breed, owner name or phone; switch Active / Archived.
 - F4. Add dog: name*, breed, gender, date of birth, weight, colour, temperament (friendly/shy/reactive),
-  owner name*, owner phone*, vaccinated (+ valid-until date), neutered, feeding notes, medical notes, notes.
+  owner name*, owner phone*, vaccinated (+ valid-until date), neutered, feeding notes, medical notes, notes,
+  **vaccination records**: attach photos (camera / gallery) or PDFs (max 10 MB each, up to 10 per dog);
+  images open in an in-app viewer, PDFs open in the phone's viewer via the share sheet; remove before saving.
 - F5. View dog: profile, owner, health & care, all stays; "New booking for <dog>".
 - F6. Edit dog. Archive / restore dog (archive blocked while it has upcoming or active stays).
 
@@ -192,6 +194,7 @@ All documents have `_id` (exposed as `id`), `createdAt`, `updatedAt` (timestamps
 | temperament | `friendly` \| `shy` \| `reactive` | |
 | feedingNotes, medicalNotes, notes | string | |
 | photoUrl | string? | |
+| documents | [DogDocument] | embedded `{_id, kind: vaccination\|other, name, uri (file URL), mimeType (image/*, application/pdf), size, uploadedAt}` |
 | status | `active` \| `archived` | soft delete |
 
 Indexes: `{ status: 1, name: 1 }`, text index on `name, breed, ownerName, ownerPhone`, `{ ownerId: 1 }`.
@@ -258,6 +261,12 @@ API responses add a `dog` summary (`$lookup` / `populate`) for lists.
 Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ data }`,
 `{ data, meta }`, `{ error: { code, message, details } }`. JWT access + refresh tokens.
 
+### File uploads
+- Mock mode: `src/lib/attachments.ts` keeps the picked file's **local URI** (visible only on that phone, lost if the
+  app cache is cleared). Fine for trying the flow.
+- Real API (Phase 2): `POST /uploads` (multipart, auth) -> store in S3 / Cloudinary -> returns `{ url }`;
+  `uploadAttachment()` is the single place to switch. Restrict to images/PDF, ≤ 10 MB; serve via signed URLs.
+
 ## 8. Mock backend (until the Node API is ready)
 - `EXPO_PUBLIC_USE_MOCKS=true` routes axios through `src/api/mock/mockAdapter.ts`.
 - `src/api/mock/routes.ts` implements every endpoint and **all business rules above**, so the
@@ -282,7 +291,7 @@ Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ d
 
 ## 10. Roadmap
 - **Phase 1 (now)**: admin board on mock data.
-- **Phase 2**: Node API + MongoDB per this document; switch `USE_MOCKS=false`; settings screen (capacity, prices, default times); admin user management.
+- **Phase 2**: Node API + MongoDB per this document; file upload endpoint for vaccination records; switch `USE_MOCKS=false`; settings screen (capacity, prices, default times); admin user management.
 - **Phase 3**: Customer app - sign up, link dogs (`ownerId`), request stays (`pending`), admin approval, push notifications.
 - **Phase 4**: Staff app - check-in/out, daily care log (feeding, walks, meds, photos for owners), kennel map.
 - Later: invoices/receipts (PDF/WhatsApp), online payments, reports (occupancy, revenue by month), vaccination expiry alerts, waitlist when full.

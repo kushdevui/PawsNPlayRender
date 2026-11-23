@@ -20,6 +20,18 @@ export type Gender = 'male' | 'female';
 export type Temperament = 'friendly' | 'shy' | 'reactive';
 export type DogStatus = 'active' | 'archived';
 
+/** A file attached to a dog (e.g. vaccination card photo or PDF). */
+export interface DogDocument {
+  id: string;
+  kind: 'vaccination' | 'other';
+  name: string;
+  /** Mock: local file URI on this device. Real API: URL returned by the upload endpoint. */
+  uri: string;
+  mimeType: string; // image/jpeg, image/png, application/pdf ...
+  size: number | null; // bytes
+  uploadedAt: string;
+}
+
 export interface Dog {
   id: string;
   name: string;
@@ -40,15 +52,17 @@ export interface Dog {
   medicalNotes: string;
   notes: string;
   photoUrl: string | null;
+  documents: DogDocument[];
   status: DogStatus;
   createdAt: string;
   updatedAt: string;
 }
 
-export type DogInput = Omit<Dog, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'photoUrl' | 'status'> & {
+export type DogInput = Omit<Dog, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'photoUrl' | 'status' | 'documents'> & {
   ownerId?: string | null;
   photoUrl?: string | null;
   status?: DogStatus;
+  documents?: DogDocument[];
 };
 
 // ---------- Bookings (boarding stays) ----------

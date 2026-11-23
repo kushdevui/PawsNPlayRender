@@ -153,7 +153,7 @@ const byCheckIn = (a: StoredBooking, b: StoredBooking) => a.checkIn.localeCompar
 
 const DOG_FIELDS: Array<keyof Dog> = [
   'name', 'breed', 'gender', 'dateOfBirth', 'weightKg', 'color', 'ownerId', 'ownerName', 'ownerPhone', 'vaccinated',
-  'vaccinationExpiry', 'neutered', 'temperament', 'feedingNotes', 'medicalNotes', 'notes', 'photoUrl', 'status',
+  'vaccinationExpiry', 'neutered', 'temperament', 'feedingNotes', 'medicalNotes', 'notes', 'photoUrl', 'status', 'documents',
 ];
 const pick = <T extends object>(src: any, keys: Array<keyof T>): Partial<T> =>
   Object.fromEntries(keys.filter((k) => src?.[k] !== undefined).map((k) => [k, src[k]])) as Partial<T>;
@@ -165,6 +165,13 @@ const validateDog = (d: Partial<Dog>, creating: boolean) => {
   if (d.gender !== undefined && !['male', 'female'].includes(d.gender)) fail(422, 'VALIDATION_ERROR', 'Invalid gender.');
   if (d.temperament !== undefined && !['friendly', 'shy', 'reactive'].includes(d.temperament)) fail(422, 'VALIDATION_ERROR', 'Invalid temperament.');
   if (d.status !== undefined && !['active', 'archived'].includes(d.status)) fail(422, 'VALIDATION_ERROR', 'Invalid status.');
+  if (d.documents !== undefined) {
+    if (!Array.isArray(d.documents) || d.documents.length > 10) fail(422, 'VALIDATION_ERROR', 'Up to 10 documents per dog.');
+    for (const doc of d.documents) {
+      if (!doc?.uri || !doc?.name || !/^(image\/|application\/pdf)/.test(doc.mimeType ?? '')) fail(422, 'VALIDATION_ERROR', 'Documents must be images or PDFs.');
+      if (doc.size && doc.size > 10 * 1024 * 1024) fail(422, 'VALIDATION_ERROR', `${doc.name} is larger than 10 MB.`);
+    }
+  }
 };
 
 const ALLOWED_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
@@ -251,7 +258,7 @@ const routes: Array<[string, string, Handler]> = [
     const dog: Dog = {
       id: newId('d'), name: '', breed: '', gender: 'male', dateOfBirth: null, weightKg: null, color: '',
       ownerId: null, ownerName: '', ownerPhone: '', vaccinated: false, vaccinationExpiry: null, neutered: false,
-      temperament: 'friendly', feedingNotes: '', medicalNotes: '', notes: '', photoUrl: null, status: 'active',
+      temperament: 'friendly', feedingNotes: '', medicalNotes: '', notes: '', photoUrl: null, documents: [], status: 'active',
       ...input, createdAt: now, updatedAt: now,
     };
     dog.name = dog.name.trim();

@@ -1,11 +1,12 @@
 // Add / edit a dog. Used by admin/dog/new and admin/dog/[id].
 import { useState } from 'react';
 import { View } from 'react-native';
-import type { Dog, DogInput, Gender, Temperament } from '@/api/types';
+import type { Dog, DogDocument, DogInput, Gender, Temperament } from '@/api/types';
 import { AppText, Button, DateField, Divider, InlineAlert, SegmentedControl, SwitchField, TextInput } from '@/components/common';
 import { makeStyles } from '@/theme';
 import { toDateKey } from '@/utils/date';
 import { genderOptions, temperamentOptions } from './options';
+import { VaccinationDocs } from './VaccinationDocs';
 
 interface Props {
   initial?: Dog;
@@ -34,6 +35,7 @@ export function DogForm({ initial, submitLabel, submitting, onSubmit }: Props) {
     feedingNotes: initial?.feedingNotes ?? '',
     medicalNotes: initial?.medicalNotes ?? '',
     notes: initial?.notes ?? '',
+    documents: (initial?.documents ?? []) as DogDocument[],
   });
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -102,6 +104,8 @@ export function DogForm({ initial, submitLabel, submitting, onSubmit }: Props) {
           placeholder="Optional"
         />
       )}
+      <AppText variant="label">Vaccination records</AppText>
+      <VaccinationDocs documents={f.documents} onChange={set('documents')} />
       <SwitchField label="Neutered / spayed" value={f.neutered} onChange={set('neutered')} />
       <TextInput label="Feeding instructions" value={f.feedingNotes} onChangeText={set('feedingNotes')} multiline placeholder="Food, quantity, times" />
       <TextInput label="Medical notes" value={f.medicalNotes} onChangeText={set('medicalNotes')} multiline placeholder="Allergies, medicines, conditions" />

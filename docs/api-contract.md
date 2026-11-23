@@ -37,7 +37,7 @@ Dates: ISO-8601 UTC strings. The app sends/receives UTC and shows local time.
 | GET / PATCH | /users/:id | admin | change role / status |
 | GET | /dogs | admin, staff | `search`, `status` = active (default) / archived / all; sorted by name |
 | GET | /dogs/:id | admin, staff | |
-| POST | /dogs | admin | name, ownerName, ownerPhone required |
+| POST | /dogs | admin | name, ownerName, ownerPhone required; `documents[]` (images/PDF, ≤10 MB, ≤10) |
 | PATCH | /dogs/:id | admin | partial update; `status: archived` blocked while open stays exist |
 | GET | /bookings | admin, staff | `from`,`to` (overlap), `status`, `dogId`, `paymentStatus` (`due` = balance > 0); sorted by checkIn; includes `dog` summary and payment totals |
 | GET | /bookings/:id | admin, staff | |
@@ -51,6 +51,10 @@ Dates: ISO-8601 UTC strings. The app sends/receives UTC and shows local time.
 | GET | /admin/dashboard | admin, staff | capacity, occupiedNow, today in/out, next 7 days, upcoming, paymentsDue |
 | GET | /admin/occupancy | admin, staff | `from`,`to` = `YYYY-MM-DD`; per day: occupied (peak), available, checkIns, checkOuts |
 | GET | /admin/billing | admin | `from`,`to` ISO; stays checking in that range: expected, received, due, advances, counts; `collected` = payments received in the range; outstanding all-time |
+
+## File uploads (Phase 2)
+`POST /uploads` multipart `file` (image/* or application/pdf, ≤ 10 MB) -> `{ data: { url, mimeType, size, name } }`.
+The app then saves the returned `url` in `dog.documents[].uri`. In mock mode the local file URI is stored instead.
 
 ## Booking money fields (derived by server)
 - `amountPaid` = Σ advances + payments − refunds

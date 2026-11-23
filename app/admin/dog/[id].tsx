@@ -7,6 +7,7 @@ import { BookingCard } from '@/features/bookings/BookingCard';
 import { useBookings } from '@/features/bookings/hooks';
 import { DogForm } from '@/features/dogs/DogForm';
 import { DogHistorySummary } from '@/features/dogs/DogHistorySummary';
+import { VaccinationDocs } from '@/features/dogs/VaccinationDocs';
 import { useDog, useUpdateDog } from '@/features/dogs/hooks';
 import { temperamentLabel, temperamentTone } from '@/features/dogs/options';
 import { makeStyles } from '@/theme';
@@ -104,6 +105,11 @@ export default function DogDetail() {
         <InfoRow icon="food-drumstick-outline" label="Feeding" value={dog.feedingNotes} />
         <InfoRow icon="medical-bag" label="Medical" value={dog.medicalNotes} />
         {!!dog.notes && <InfoRow icon="note-text-outline" label="Notes" value={dog.notes} />}
+      </Card>
+
+      <Card>
+        <AppText variant="label" color="textMuted">VACCINATION RECORDS</AppText>
+        <VaccinationDocs documents={dog.documents ?? []} />
       </Card>
 
       {!!actionError && <InlineAlert message={actionError} />}
