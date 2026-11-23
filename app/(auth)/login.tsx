@@ -8,10 +8,11 @@ import { makeStyles } from '@/theme';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Admin test accounts (mock mode). Password for all: password123
 const DEMO_ACCOUNTS = [
-  { label: 'Admin', email: 'admin@pawsnplay.com' },
-  { label: 'User', email: 'priya@example.com' },
-  { label: 'Staff', email: 'neha.staff@pawsnplay.com' },
+  { label: 'Kush', email: 'kush@pawsnplay.com' },
+  { label: 'Divya', email: 'divya@pawsnplay.com' },
+  { label: 'Shreya', email: 'shreya@pawsnplay.com' },
 ];
 
 type Errors = { email?: string; password?: string };
@@ -58,7 +59,7 @@ export default function LoginScreen() {
       <View style={styles.header}>
         <Logo size={132} />
         <AppText variant="heading" align="center">Welcome back</AppText>
-        <AppText variant="caption" align="center">Log in to book play, care and grooming for your pet.</AppText>
+        <AppText variant="caption" align="center">Boarding admin - manage dogs, bookings and capacity.</AppText>
       </View>
 
       <View style={styles.form}>
@@ -113,7 +114,7 @@ export default function LoginScreen() {
 
       {USE_MOCKS && (
         <View style={styles.demo}>
-          <Divider label="Test accounts (mock mode)" />
+          <Divider label="Admin test accounts (mock mode)" />
           <View style={styles.demoRow}>
             {DEMO_ACCOUNTS.map((a) => (
               <Button key={a.email} title={a.label} variant="outline" size="sm" onPress={() => fillDemo(a.email)} />

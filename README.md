@@ -1,6 +1,8 @@
 # PawsNPlay 🐾
 
-React Native app (Expo SDK 58, Expo Router, TypeScript, React Native Paper) for **pet parents, staff and admins**.
+React Native app (Expo SDK 58, Expo Router, TypeScript, React Native Paper) for the **Paws N' Play dog boarding** team.
+Phase 1 is the **admin board**: dogs, bookings (check-in/out), capacity dashboard.
+Requirements & architecture: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 Runs on Android and iOS. The Node.js REST backend lives in a separate repo; until it is ready the
 app runs on mock JSON (`mock/`).
 
@@ -22,9 +24,9 @@ npx expo start             # press a = Android, i = iOS simulator, or scan the Q
 ## Test accounts (mock mode)
 | Role  | Email                    | Password    |
 |-------|--------------------------|-------------|
-| Admin | admin@pawsnplay.com      | password123 |
-| User  | priya@example.com        | password123 |
-| Staff | neha.staff@pawsnplay.com | password123 |
+| Admin | kush@pawsnplay.com       | password123 |
+| Admin | divya@pawsnplay.com      | password123 |
+| Admin | shreya@pawsnplay.com     | password123 |
 
 The login screen has quick-fill buttons for these while mocks are on.
 
@@ -40,14 +42,13 @@ The login screen has quick-fill buttons for these while mocks are on.
 ```
 app/                 # routes (Expo Router)
   (auth)/            # /login, /register
-  user/              # pet parent tabs: Home, My Pets, Bookings, Profile
-  admin/             # admin tabs: Dashboard, Bookings, Users, Profile
-  staff/             # staff tabs: My Schedule, Profile
+  admin/             # Dashboard, Bookings, Dogs, Profile + booking/dog forms
+  user/, staff/      # placeholders (later phases)
 src/
   api/               # axios client, types, endpoint functions, mock adapter
   auth/              # session store, secure token storage, RoleGate, permissions
   components/common/ # UI kit on React Native Paper (Button, TextInput, Card, ...)
-  features/          # data hooks + feature components (bookings, pets, services, admin, profile)
+  features/          # data hooks + feature components (bookings, dogs, dashboard, profile)
   theme/             # brand palette -> semantic theme -> Paper theme (change look in one place)
 mock/                # mock backend: endpoints.json + data/*.json
 docs/api-contract.md # API contract for the backend repo

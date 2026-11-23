@@ -1,12 +1,5 @@
-import { AppText, Screen } from '@/components/common';
-import { BookingList } from '@/features/bookings/BookingList';
+import { ComingSoon } from '@/features/placeholder/ComingSoon';
 
-export default function StaffSchedule() {
-  return (
-    <Screen>
-      <AppText variant="title">My Schedule</AppText>
-      <AppText variant="caption">Bookings assigned to you</AppText>
-      <BookingList emptyText="Nothing assigned to you yet." />
-    </Screen>
-  );
+export default function StaffHome() {
+  return <ComingSoon title="Staff app coming soon" message="Ask an admin to check dogs in and out for now." />;
 }

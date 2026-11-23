@@ -2,9 +2,8 @@
 // never axios directly. Same code works with mocks and with the real backend.
 import { api } from '../client';
 import type {
-  ApiItem, ApiList, AppNotification, AuthResponse, Booking, BookingInput, BookingStatus,
-  DashboardStats, ListParams, Pet, PetInput, Role, Service, ServiceCategory, ServiceInput,
-  Species, User, UserStatus,
+  ApiItem, ApiList, AuthResponse, Booking, BookingFilters, BookingInput, BookingStatus,
+  DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, Role, User, UserStatus,
 } from '../types';
 
 const item = <T>(p: Promise<{ data: ApiItem<T> }>) => p.then((r) => r.data.data);
@@ -29,34 +28,25 @@ export const usersApi = {
   update: (id: string, body: { role?: Role; status?: UserStatus }) => item<User>(api.patch(`/users/${id}`, body)),
 };
 
-export const petsApi = {
-  list: (params?: ListParams & { species?: Species; ownerId?: string }) => list<Pet>(api.get('/pets', { params })),
-  get: (id: string) => item<Pet>(api.get(`/pets/${id}`)),
-  create: (body: PetInput) => item<Pet>(api.post('/pets', body)),
-  update: (id: string, body: Partial<PetInput>) => item<Pet>(api.patch(`/pets/${id}`, body)),
-  remove: (id: string) => item<{ success: boolean }>(api.delete(`/pets/${id}`)),
-};
-
-export const servicesApi = {
-  list: (params?: ListParams & { category?: ServiceCategory }) => list<Service>(api.get('/services', { params })),
-  get: (id: string) => item<Service>(api.get(`/services/${id}`)),
-  create: (body: ServiceInput) => item<Service>(api.post('/services', body)),
-  update: (id: string, body: Partial<ServiceInput>) => item<Service>(api.patch(`/services/${id}`, body)),
+export const dogsApi = {
+  list: (params?: ListParams & { search?: string; status?: DogStatus }) => list<Dog>(api.get('/dogs', { params })),
+  get: (id: string) => item<Dog>(api.get(`/dogs/${id}`)),
+  create: (body: DogInput) => item<Dog>(api.post('/dogs', body)),
+  update: (id: string, body: Partial<DogInput>) => item<Dog>(api.patch(`/dogs/${id}`, body)),
 };
 
 export const bookingsApi = {
-  list: (params?: ListParams & { status?: BookingStatus; from?: string; to?: string }) =>
-    list<Booking>(api.get('/bookings', { params })),
+  list: (params?: ListParams & BookingFilters) => list<Booking>(api.get('/bookings', { params })),
   get: (id: string) => item<Booking>(api.get(`/bookings/${id}`)),
   create: (body: BookingInput) => item<Booking>(api.post('/bookings', body)),
+  update: (id: string, body: Partial<BookingInput>) => item<Booking>(api.patch(`/bookings/${id}`, body)),
   setStatus: (id: string, status: Exclude<BookingStatus, 'pending'>) =>
     item<Booking>(api.patch(`/bookings/${id}/status`, { status })),
-  assign: (id: string, staffId: string) => item<Booking>(api.patch(`/bookings/${id}/assign`, { staffId })),
 };
 
-export const notificationsApi = {
-  list: (params?: ListParams & { unread?: boolean }) => list<AppNotification>(api.get('/notifications', { params })),
-  markRead: (id: string) => item<AppNotification>(api.patch(`/notifications/${id}/read`)),
+export const settingsApi = {
+  get: () => item<FacilitySettings>(api.get('/settings')),
+  update: (body: Partial<FacilitySettings>) => item<FacilitySettings>(api.patch('/settings', body)),
 };
 
 export const adminApi = {

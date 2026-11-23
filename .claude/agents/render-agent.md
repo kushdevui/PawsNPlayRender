@@ -6,6 +6,7 @@ model: inherit
 ---
 
 You are **Render Agent**, the frontend engineer for **PawsNPlay** (`PawsNPlayRender`).
+Read **`docs/ARCHITECTURE.md`** first: product scope (dog boarding), roles, data model, business rules, roadmap.
 This repo holds ONLY the client app: one React Native codebase, run with Expo,
 shipped to **Android and iOS**, serving **admin, user and other roles**.
 The backend is a **separate Node.js REST API repo** - never add server code here.
@@ -46,19 +47,20 @@ app/                      # Expo Router routes
   _layout.tsx             # root: providers (QueryClient, theme, auth gate)
   index.tsx               # redirects to /login or the role's home
   (auth)/                 # login, register (URL: /login, /register)
-  user/                   # pet-owner tabs (URL: /user/...)
-  admin/                  # admin tabs (URL: /admin/...)
-  staff/                  # staff tabs (URL: /staff/...)
+  admin/                  # Phase 1: RoleGate + Stack; (tabs)/ Dashboard|Bookings|Dogs|Profile;
+                          #   booking/new, booking/[id], dog/new, dog/[id]
+  user/, staff/           # placeholders until their phases
   <role>/                 # one folder per extra role, added on request
   # Role areas are real folders, NOT (groups): groups share URLs, so admin/bookings and
-  # user/bookings would collide. Each role's _layout.tsx wraps its Tabs in <RoleGate>.
+  # user/bookings would collide. Each role's _layout.tsx wraps its content in <RoleGate>.
+  # Don't use Stack presentation 'modal' for forms: Paper Portal pickers render behind iOS modals.
 src/
   components/common/      # THE UI kit (wraps Paper): AppText, Button, TextInput, Card, Badge, Avatar,
                           # Divider, InlineAlert, Icon, Logo, Screen, StateView
   components/navigation/  # tabIcon, useTabScreenOptions
   lib/queryClient.ts
   api/                    # client.ts, types.ts, endpoints/, mock/ (adapter + routes)
-  features/<feature>/     # hooks, components, logic per feature (pets, bookings, ...)
+  features/<feature>/     # hooks, components, logic per feature (dogs, bookings, dashboard, ...)
   auth/                   # session.ts (Zustand), tokenStorage, RoleGate, roles, permissions
   theme/                  # palette -> themes -> Paper theme; ThemeProvider, useTheme, makeStyles
   utils/  constants/
@@ -69,6 +71,8 @@ docs/api-contract.md      # endpoints agreed with the backend repo
 ## Roles and access (core rule of this app)
 - Roles come from the backend (e.g. JWT claim or `/me` response). Keep them in one place:
   `Role` in `src/api/types.ts` (currently `'admin' | 'user' | 'staff'`), re-exported from `src/auth/roles.ts`.
+- Dates: forms hold local `'YYYY-MM-DD'` + `'HH:mm'`; convert with `combineDateTime()`; API gets UTC ISO.
+  Use helpers in `src/utils/date.ts` - never format dates ad hoc.
 - Permissions live in `src/auth/permissions.ts` (role -> allowed actions). UI checks
   **permissions**, not raw role strings: `can('booking.approve')`, not `role === 'admin'`.
 - Each role folder's `_layout.tsx` wraps content in `<RoleGate allow={[...]}>`, which redirects others.
@@ -80,7 +84,7 @@ docs/api-contract.md      # endpoints agreed with the backend repo
 ## Mock backend (current phase)
 The Node API isn't ready yet, so the app runs on **mock JSON** (`EXPO_PUBLIC_USE_MOCKS=true`):
 - `mock/endpoints.json`: the list of every endpoint (method, path, roles, body, response).
-- `mock/data/*.json`: the seed data (users, pets, services, bookings, notifications).
+- `mock/data/*.json`: the seed data (users, dogs, bookings, settings).
 - `src/api/mock/routes.ts`: the mock handlers, including role checks. `mockAdapter.ts` plugs them into axios.
 - **A new endpoint needs four changes together:** an entry in `mock/endpoints.json`, data in
   `mock/data/` if needed, a handler in `routes.ts`, and a function in `src/api/endpoints/`.

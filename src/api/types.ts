@@ -1,4 +1,5 @@
-// Shared API types. Keep in sync with mock/endpoints.json and the Node backend.
+// Shared API types. Keep in sync with mock/endpoints.json, docs/ARCHITECTURE.md and the Node backend.
+// All dates are ISO-8601 strings in UTC (e.g. "2026-11-23T04:30:00.000Z"); the app shows them in local time.
 
 export type Role = 'admin' | 'user' | 'staff';
 export type UserStatus = 'active' | 'inactive';
@@ -14,80 +15,119 @@ export interface User {
   createdAt: string;
 }
 
-export type Species = 'dog' | 'cat';
+// ---------- Dogs ----------
+export type Gender = 'male' | 'female';
+export type Temperament = 'friendly' | 'shy' | 'reactive';
+export type DogStatus = 'active' | 'archived';
 
-export interface Pet {
+export interface Dog {
   id: string;
-  ownerId: string;
   name: string;
-  species: Species;
   breed: string;
-  gender: 'male' | 'female';
-  dateOfBirth: string;
-  weightKg: number;
+  gender: Gender;
+  dateOfBirth: string | null; // YYYY-MM-DD
+  weightKg: number | null;
+  color: string;
+  /** Linked customer account - null until the customer app exists. */
+  ownerId: string | null;
+  ownerName: string;
+  ownerPhone: string;
   vaccinated: boolean;
+  vaccinationExpiry: string | null; // YYYY-MM-DD
+  neutered: boolean;
+  temperament: Temperament;
+  feedingNotes: string;
+  medicalNotes: string;
   notes: string;
   photoUrl: string | null;
+  status: DogStatus;
   createdAt: string;
+  updatedAt: string;
 }
-export type PetInput = Omit<Pet, 'id' | 'ownerId' | 'createdAt'> & { ownerId?: string };
 
-export type ServiceCategory = 'daycare' | 'grooming' | 'play' | 'walking' | 'training';
+export type DogInput = Omit<Dog, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'photoUrl' | 'status'> & {
+  ownerId?: string | null;
+  photoUrl?: string | null;
+  status?: DogStatus;
+};
 
-export interface Service {
+// ---------- Bookings (boarding stays) ----------
+/**
+ * confirmed   - booked, dog not arrived yet
+ * checked_in  - dog is at the facility (counts toward capacity)
+ * checked_out - stay finished
+ * cancelled   - not happening
+ * (pending is reserved for future customer-app requests awaiting approval)
+ */
+export type BookingStatus = 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
+export type BookingSource = 'admin' | 'app';
+
+export interface DogSummary {
   id: string;
   name: string;
-  category: ServiceCategory;
-  description: string;
-  durationMinutes: number;
-  price: number;
-  currency: string;
-  speciesAllowed: Species[];
-  active: boolean;
+  breed: string;
+  ownerName: string;
+  ownerPhone: string;
 }
-export type ServiceInput = Omit<Service, 'id'>;
-
-export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 export interface Booking {
   id: string;
-  userId: string;
-  petId: string;
-  serviceId: string;
-  staffId: string | null;
-  startTime: string;
-  endTime: string;
+  dogId: string;
+  /** Denormalised for lists (server joins it; Mongo: populate). */
+  dog: DogSummary | null;
+  checkIn: string;
+  checkOut: string;
   status: BookingStatus;
-  notes: string;
-  totalPrice: number;
+  kennel: string | null;
+  nights: number;
+  pricePerNight: number;
+  totalAmount: number;
   currency: string;
+  notes: string;
+  source: BookingSource;
+  createdBy: string;
   createdAt: string;
+  updatedAt: string;
 }
+
 export interface BookingInput {
-  petId: string;
-  serviceId: string;
-  startTime: string;
+  dogId: string;
+  checkIn: string;
+  checkOut: string;
+  kennel?: string | null;
+  pricePerNight?: number;
   notes?: string;
 }
 
-export interface AppNotification {
-  id: string;
-  userId: string;
-  type: 'booking' | 'promo' | 'reminder' | 'assignment' | 'system';
-  title: string;
-  body: string;
-  read: boolean;
-  data: Record<string, string> | null;
-  createdAt: string;
+export interface BookingFilters {
+  /** Bookings overlapping [from, to) - use for month or single-day views. */
+  from?: string;
+  to?: string;
+  status?: BookingStatus;
+  dogId?: string;
+}
+
+// ---------- Facility ----------
+export interface FacilitySettings {
+  facilityName: string;
+  capacity: number;
+  defaultCheckInTime: string; // HH:mm
+  defaultCheckOutTime: string; // HH:mm
+  pricePerNight: number;
+  currency: string;
+  timezone: string;
 }
 
 export interface DashboardStats {
-  totalUsers: number;
-  totalStaff: number;
-  totalPets: number;
-  bookingsByStatus: Record<BookingStatus, number>;
-  revenue: { amount: number; currency: string };
-  upcomingBookings: Booking[];
+  capacity: number;
+  occupiedNow: number;
+  availableNow: number;
+  todayCheckIns: Booking[];
+  todayCheckOuts: Booking[];
+  upcoming: Booking[]; // next 7 days, not yet checked in
+  occupancyNext7Days: Array<{ date: string; count: number }>; // date = YYYY-MM-DD (local)
+  activeDogs: number;
+  bookingsThisMonth: number;
 }
 
 export interface AuthResponse {
@@ -96,7 +136,7 @@ export interface AuthResponse {
   user: User;
 }
 
-// Response envelopes
+// ---------- Envelopes ----------
 export interface ApiItem<T> {
   data: T;
 }
@@ -105,7 +145,7 @@ export interface ApiList<T> {
   meta: { total: number; page: number; limit: number };
 }
 export interface ApiErrorBody {
-  error: { code: string; message: string };
+  error: { code: string; message: string; details?: unknown };
 }
 
 export interface ListParams {
