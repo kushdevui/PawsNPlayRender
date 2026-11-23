@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import type { OccupancyDay } from '@/api/types';
 import { AppText, Card, MonthSwitcher, StateView } from '@/components/common';
 import { makeStyles, useTheme, type AppTheme } from '@/theme';
-import { WEEKDAY_INITIALS, addMonths, startOfMonth, toDateKey } from '@/utils/date';
+import { WEEKDAY_SHORT, addMonths, startOfMonth, toDateKey, toWeeks } from '@/utils/date';
 import { DaySheet } from './DaySheet';
 import { useOccupancy } from './hooks';
 
@@ -36,9 +36,9 @@ export function OccupancyCalendar() {
   const { data, isLoading, error, refetch } = useOccupancy(from, to);
   const todayKey = toDateKey(new Date());
 
-  const cells = useMemo(() => {
+  const weeks = useMemo(() => {
     const blanks = Array.from({ length: month.getDay() }, () => null);
-    return [...blanks, ...(data?.days ?? [])];
+    return toWeeks<OccupancyDay>([...blanks, ...(data?.days ?? [])]);
   }, [data, month]);
 
   const capacity = data?.capacity ?? 0;
@@ -55,43 +55,47 @@ export function OccupancyCalendar() {
       ) : (
         <>
           <View style={styles.row}>
-            {WEEKDAY_INITIALS.map((d, i) => (
+            {WEEKDAY_SHORT.map((d, i) => (
               <View key={i} style={styles.headCell}>
                 <AppText variant="caption" color="textSubtle">{d}</AppText>
               </View>
             ))}
           </View>
           <View style={styles.grid}>
-            {cells.map((day, i) => {
-              if (!day) return <View key={`b${i}`} style={styles.cell} />;
-              const level = levelOf(day, capacity);
-              const c = levelColors(theme, level);
-              const isToday = day.date === todayKey;
-              const isPast = day.date < todayKey;
-              return (
-                <View key={day.date} style={styles.cell}>
-                  <Pressable
-                    onPress={() => setOpenDay(day)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${day.date}: ${day.occupied} of ${capacity} booked, ${day.available} free, ${day.checkIns} arriving`}
-                    style={({ pressed }) => [
-                      styles.day,
-                      { backgroundColor: c.bg, opacity: isPast ? 0.55 : 1 },
-                      isToday && styles.today,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <AppText variant="caption" color="text" style={[styles.dayNum, isToday && styles.bold]}>
-                      {Number(day.date.slice(8))}
-                    </AppText>
-                    <AppText style={[styles.count, { color: c.fg }]}>
-                      {day.occupied > 0 ? `${day.occupied}/${capacity}` : '–'}
-                    </AppText>
-                    {day.checkIns > 0 && <View style={styles.dot} />}
-                  </Pressable>
-                </View>
-              );
-            })}
+            {weeks.map((week, w) => (
+              <View key={w} style={styles.row}>
+                {week.map((day, i) => {
+                  if (!day) return <View key={`b${w}-${i}`} style={styles.cell} />;
+                  const level = levelOf(day, capacity);
+                  const c = levelColors(theme, level);
+                  const isToday = day.date === todayKey;
+                  const isPast = day.date < todayKey;
+                  return (
+                    <View key={day.date} style={styles.cell}>
+                      <Pressable
+                        onPress={() => setOpenDay(day)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${day.date}: ${day.occupied} of ${capacity} booked, ${day.available} free, ${day.checkIns} arriving`}
+                        style={({ pressed }) => [
+                          styles.day,
+                          { backgroundColor: c.bg, opacity: isPast ? 0.55 : 1 },
+                          isToday && styles.today,
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        <AppText variant="caption" color="text" style={[styles.dayNum, isToday && styles.bold]}>
+                          {Number(day.date.slice(8))}
+                        </AppText>
+                        <AppText style={[styles.count, { color: c.fg }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                          {day.occupied > 0 ? `${day.occupied}/${capacity}` : '–'}
+                        </AppText>
+                        {day.checkIns > 0 && <View style={styles.dot} />}
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
           </View>
 
           <View style={styles.legend}>
@@ -128,9 +132,9 @@ function Legend({ color, label }: { color: string; label: string }) {
 const useStyles = makeStyles((t) => ({
   loading: { height: 280 },
   row: { flexDirection: 'row' },
-  headCell: { width: `${100 / 7}%`, alignItems: 'center', paddingVertical: t.spacing.xs },
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: `${100 / 7}%`, aspectRatio: 0.85, padding: 2 },
+  headCell: { flex: 1, alignItems: 'center', paddingVertical: t.spacing.xs },
+  grid: {},
+  cell: { flex: 1, aspectRatio: 0.85, padding: 2 },
   day: {
     flex: 1,
     borderRadius: t.radius.sm,

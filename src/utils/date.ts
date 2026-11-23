@@ -41,6 +41,18 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export const WEEKDAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+/** Calendar column headers (Sunday first). Two letters so Sun/Sat are distinguishable. */
+export const WEEKDAY_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+/**
+ * Split month cells (leading nulls + days) into weeks of exactly 7, padding the last week.
+ * Render each week as its own row of flex:1 cells - percentage widths + flexWrap can
+ * round past 100% on devices and push Saturday onto the next line.
+ */
+export const toWeeks = <T>(cells: Array<T | null>): Array<Array<T | null>> => {
+  const padded = [...cells, ...Array.from({ length: (7 - (cells.length % 7)) % 7 }, () => null)];
+  return Array.from({ length: padded.length / 7 }, (_, w) => padded.slice(w * 7, w * 7 + 7));
+};
 
 /** "Mon, 25 Nov" */
 export const formatDate = (d: Date | string) => {
