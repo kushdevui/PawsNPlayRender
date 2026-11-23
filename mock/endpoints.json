@@ -322,10 +322,10 @@
       ],
       "query": {
         "from": "ISO",
-        "to": "ISO - stays CHECKING IN in [from,to), cancelled excluded"
+        "to": "ISO - any period (week, month, custom)"
       },
       "response": {
-        "data": "BillingSummary: expected, received, due, advances, paid/partial/unpaid counts, outstandingAllTime, outstandingBookings"
+        "data": "BillingSummary: expected, received, due, advances, paid/partial/unpaid counts (stays checking in [from,to), cancelled excluded); collected, collectedCount (payments received in [from,to)); outstandingAllTime, outstandingBookings"
       }
     },
     {

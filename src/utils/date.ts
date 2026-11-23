@@ -28,7 +28,22 @@ export const addMonths = (d: Date, n: number) => new Date(d.getFullYear(), d.get
 export const isSameDay = (a: Date, b: Date) => toDateKey(a) === toDateKey(b);
 export const isToday = (d: Date) => isSameDay(d, new Date());
 
+/** Monday 00:00 of the week containing d. */
+export const startOfWeek = (d: Date) => {
+  const day = (d.getDay() + 6) % 7; // Mon = 0
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - day);
+};
+
 /** [from, to) range for API filters. */
+export const weekRange = (offsetWeeks = 0, base = new Date()) => {
+  const start = addDays(startOfWeek(base), offsetWeeks * 7);
+  return { from: start.toISOString(), to: addDays(start, 7).toISOString() };
+};
+/** Inclusive local date keys -> [from, to) ISO range. */
+export const dateKeysRange = (fromKey: string, toKey: string) => ({
+  from: fromDateKey(fromKey).toISOString(),
+  to: addDays(fromDateKey(toKey), 1).toISOString(),
+});
 export const monthRange = (month: Date) => ({ from: startOfMonth(month).toISOString(), to: addMonths(month, 1).toISOString() });
 export const dayRange = (day: Date) => ({ from: startOfDay(day).toISOString(), to: addDays(day, 1).toISOString() });
 
@@ -72,6 +87,15 @@ export const formatTime = (v: Date | string) => {
   const [h, m] = typeof v === 'string' && /^\d{2}:\d{2}$/.test(v) ? v.split(':').map(Number) : [new Date(v).getHours(), new Date(v).getMinutes()];
   const suffix = h >= 12 ? 'PM' : 'AM';
   return `${h % 12 === 0 ? 12 : h % 12}:${pad(m)} ${suffix}`;
+};
+
+/** "23 Nov – 29 Nov" for a [from, to) ISO range (adds years when they differ from now). */
+export const formatRange = (fromIso: string, toIso: string) => {
+  const a = new Date(fromIso);
+  const b = addDays(new Date(toIso), -1); // to is exclusive
+  const y = (d: Date) => (d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : '');
+  const f = (d: Date) => `${d.getDate()} ${MONTHS[d.getMonth()]}${y(d)}`;
+  return isSameDay(a, b) ? f(a) : `${f(a)} – ${f(b)}`;
 };
 
 /** "Mon, 25 Nov · 10:00 AM" */

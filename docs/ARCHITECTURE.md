@@ -75,8 +75,10 @@ Customer accounts are not linked yet: owner name/phone live on the dog. Later ea
 - F20. "Record advance / payment / refund" sheet with quick amounts (50% advance, full balance, full refund).
   Cannot pay more than the balance; refunds cannot exceed what was received; cancelled stays accept refunds only.
 - F21. Booking cards show amount and a payment badge (Paid / ₹X due / Unpaid / Refund ₹X).
-- F22. **Billing tab**: month switcher; for stays **checking in** that month: Expected, Received, Due, % collected,
-  advances, paid/part-paid/unpaid counts; total outstanding across all months; list filter Due / Paid / All.
+- F22. **Billing tab**: period chips **This week / Next week / Last week / Month (‹ › switcher) / Custom (from-to dates)**;
+  weeks run Monday-Sunday. For stays **checking in** in the period: Expected, Received, Due, % collected,
+  advances, paid/part-paid/unpaid counts. **Collected in this period** = money actually received in those dates
+  (any stay, refunds deducted). Total outstanding across all months; list filter Due / Paid / All.
 
 **Settings**
 - F23. Boarding settings (Profile -> Boarding settings): capacity, price per night, default check-in/out times, facility name.
@@ -245,7 +247,8 @@ API responses add a `dog` summary (`$lookup` / `populate`) for lists.
    (`CAPACITY_BELOW_OCCUPANCY`). Lowering it below future bookings is allowed - those days show as full/over.
 11. **Payments**: amount > 0; advance/payment cannot exceed `balanceDue` (`OVERPAYMENT`); refund cannot exceed
    `amountPaid`; cancelled bookings accept refunds only. Editing a stay can make it overpaid (shows "to refund").
-12. **Billing** groups money by the stay's **check-in month**; cancelled stays are excluded from expected/received.
+12. **Billing** groups money by the stay's **check-in date** within the chosen period; cancelled stays are excluded
+   from expected/received. `collected` is cash-flow: payments whose `receivedAt` falls in the period.
 13. **Dashboard** (computed in facility local time): occupiedNow = `checked_in` count;
    today's check-ins = stays starting today (confirmed/checked_in/checked_out);
    today's check-outs = stays ending today (checked_in/checked_out);
@@ -268,7 +271,7 @@ Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ d
 | Login | `/login` | email/password, admin quick-fill in mock mode |
 | Dashboard | `/admin` | capacity (edit), payments due, dog lookup, occupancy calendar, arrivals/departures/upcoming |
 | Bookings | `/admin/bookings` | month switcher, dog filter (all-time history), date filter, status chips, + New booking |
-| Billing | `/admin/billing` | month expected/received/due, outstanding, due/paid list |
+| Billing | `/admin/billing` | period (this/next/last week, month, custom): expected/received/due, collected, outstanding, due/paid list |
 | Boarding settings | `/admin/settings` | capacity, price per night, default times |
 | New booking | `/admin/booking/new?dogId=&date=` | booking form |
 | Booking detail | `/admin/booking/[id]` | info, check in/out/cancel, payments (record/remove), edit |

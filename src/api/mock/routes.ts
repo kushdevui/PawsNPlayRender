@@ -391,6 +391,14 @@ const routes: Array<[string, string, Handler]> = [
       unpaidCount: inRange.filter((b) => b.paymentStatus === 'unpaid').length,
       outstandingAllTime: open.reduce((n, b) => n + b.balanceDue, 0),
       outstandingBookings: open.length,
+      // Cash flow: money actually received in [from, to), for any stay (refunds subtract).
+      ...(() => {
+        const pays = db.bookings.flatMap((b) => b.payments).filter((p) => ms(p.receivedAt) >= f && ms(p.receivedAt) < t);
+        return {
+          collected: pays.reduce((n, p) => n + (p.type === 'refund' ? -p.amount : p.amount), 0),
+          collectedCount: pays.length,
+        };
+      })(),
     });
   }],
 

@@ -50,7 +50,7 @@ Dates: ISO-8601 UTC strings. The app sends/receives UTC and shows local time.
 | PATCH | /settings | admin | capacity (≥ dogs checked in now), pricePerNight, default times, facilityName |
 | GET | /admin/dashboard | admin, staff | capacity, occupiedNow, today in/out, next 7 days, upcoming, paymentsDue |
 | GET | /admin/occupancy | admin, staff | `from`,`to` = `YYYY-MM-DD`; per day: occupied (peak), available, checkIns, checkOuts |
-| GET | /admin/billing | admin | `from`,`to` ISO; stays checking in that range: expected, received, due, advances, counts, outstanding all-time |
+| GET | /admin/billing | admin | `from`,`to` ISO; stays checking in that range: expected, received, due, advances, counts; `collected` = payments received in the range; outstanding all-time |
 
 ## Booking money fields (derived by server)
 - `amountPaid` = Σ advances + payments − refunds

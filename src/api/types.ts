@@ -139,7 +139,7 @@ export interface BookingFilters {
   paymentStatus?: PaymentStatus | 'due'; // due = unpaid or partial
 }
 
-/** Billing for stays that CHECK IN within [from, to). Cancelled stays are excluded. */
+/** Billing for stays that CHECK IN within [from, to) (cancelled excluded), plus cash collected in the period. */
 export interface BillingSummary {
   from: string;
   to: string;
@@ -155,6 +155,9 @@ export interface BillingSummary {
   /** All months, non-cancelled, not yet fully paid. */
   outstandingAllTime: number;
   outstandingBookings: number;
+  /** Money actually received in [from, to) for any stay (advances + payments - refunds). */
+  collected: number;
+  collectedCount: number;
 }
 
 // ---------- Facility ----------
