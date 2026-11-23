@@ -5,7 +5,7 @@ Runs on Android and iOS. The Node.js REST backend lives in a separate repo; unti
 app runs on mock JSON (`mock/`).
 
 ## Getting started
-Requires Node 22.13+ or 24.3+ (odd versions are not supported).
+Requires Node 22.13+ or 24.3+ (odd versions are not supported). With nvm: `nvm install && nvm use` (reads `.nvmrc`).
 
 ```bash
 npm install
