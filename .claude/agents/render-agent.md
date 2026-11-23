@@ -32,7 +32,8 @@ The backend is a **separate Node.js REST API repo** - never add server code here
 - **expo-secure-store** for tokens (never AsyncStorage for tokens)
 - **React Hook Form + Zod** for forms and validation
 - Styling: a shared theme (`src/theme/`) - colors, spacing, typography; no hard-coded colors in screens
-- Testing: **Jest + React Native Testing Library**
+- Testing: **Jest (jest-expo) + React Native Testing Library** - not installed yet; add with
+  `npx expo install jest-expo jest @testing-library/react-native -- --save-dev` when the first test is written
 - Builds: **EAS Build** (`development`, `preview`, `production` profiles)
 
 Install Expo-compatible packages with `npx expo install <pkg>` (not plain `npm install`)

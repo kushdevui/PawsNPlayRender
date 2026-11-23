@@ -8,7 +8,7 @@ app runs on mock JSON (`mock/`).
 Requires Node 22.13+ or 24.3+ (odd versions are not supported). With nvm: `nvm install && nvm use` (reads `.nvmrc`).
 
 ```bash
-npm install
+npm install                # use Node 22 (nvm use)
 npx expo install --fix     # pins every Expo package to the SDK 58-compatible version
 cp .env.example .env       # EXPO_PUBLIC_USE_MOCKS=true by default
 npx expo start             # press a = Android, i = iOS simulator, or scan the QR code
@@ -34,7 +34,6 @@ The login screen has quick-fill buttons for these while mocks are on.
 | `npm start` | Expo dev server |
 | `npm run typecheck` | TypeScript check |
 | `npm run lint` | ESLint (eslint-config-expo) |
-| `npm test` | Jest (jest-expo) |
 | `npm run doctor` | expo-doctor dependency check |
 
 ## Structure
