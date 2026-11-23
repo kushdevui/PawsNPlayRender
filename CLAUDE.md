@@ -10,4 +10,6 @@ Frontend for **PawsNPlay** - a React Native app (Expo) for Android and iOS, used
 - Backend endpoints are documented in `docs/api-contract.md` - keep it in sync with the API repo.
 - Until the backend is ready the app uses mock JSON in `mock/` (`EXPO_PUBLIC_USE_MOCKS=true`, see `mock/README.md`).
   Test logins: admin@pawsnplay.com / priya@example.com / neha.staff@pawsnplay.com, password `password123`.
+- UI: screens use only `@/components/common` (built on React Native Paper) and theme tokens from `@/theme`;
+  no hard-coded colours/sizes. Brand = white background, black text, logo pink accents.
 - Never commit `.env` files or tokens.

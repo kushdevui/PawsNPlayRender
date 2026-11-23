@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Alert, View } from 'react-native';
+import { router } from 'expo-router';
 import { USE_MOCKS } from '@/api/client';
 import { useSession } from '@/auth/session';
-import { AppText, Button, Screen, TextField } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme';
+import { AppText, Button, Divider, InlineAlert, Logo, Screen, TextInput } from '@/components/common';
+import { makeStyles } from '@/theme';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const DEMO_ACCOUNTS = [
   { label: 'Admin', email: 'admin@pawsnplay.com' },
@@ -12,70 +14,122 @@ const DEMO_ACCOUNTS = [
   { label: 'Staff', email: 'neha.staff@pawsnplay.com' },
 ];
 
+type Errors = { email?: string; password?: string };
+
+const validate = (email: string, password: string): Errors => ({
+  email: !email.trim() ? 'Enter your email' : !EMAIL_RE.test(email.trim()) ? 'Enter a valid email' : undefined,
+  password: !password ? 'Enter your password' : undefined,
+});
+
 export default function LoginScreen() {
+  const styles = useStyles();
   const signIn = useSession((s) => s.signIn);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
-    if (!email || !password) return setError('Enter your email and password.');
-    setError(null);
+    const next = validate(email, password);
+    setErrors(next);
+    setFormError(null);
+    if (next.email || next.password) return;
     setLoading(true);
     try {
       await signIn(email, password);
-      // Redirect happens in (auth)/_layout once the session has a user.
+      // (auth)/_layout redirects to the role's home once the session has a user.
     } catch (e) {
-      setError((e as Error).message);
+      setFormError((e as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
+  const fillDemo = (demoEmail: string) => {
+    setEmail(demoEmail);
+    setPassword('password123');
+    setErrors({});
+    setFormError(null);
+  };
+
   return (
-    <Screen scroll style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.form}>
-        <View style={styles.brand}>
-          <AppText style={styles.logo}>🐾</AppText>
-          <AppText variant="title">PawsNPlay</AppText>
-          <AppText variant="caption">Log in to continue</AppText>
-        </View>
+    <Screen scroll centered keyboardAware edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Logo size={132} />
+        <AppText variant="heading" align="center">Welcome back</AppText>
+        <AppText variant="caption" align="center">Log in to book play, care and grooming for your pet.</AppText>
+      </View>
 
-        <TextField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="you@example.com" />
-        <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" placeholder="••••••••" />
-        {!!error && <AppText style={styles.error}>{error}</AppText>}
-        <Button title="Log in" onPress={submit} loading={loading} />
+      <View style={styles.form}>
+        {!!formError && <InlineAlert message={formError} />}
 
-        <Link href="/register" asChild>
-          <Pressable accessibilityRole="link" style={styles.link}>
-            <AppText variant="caption">New here? <AppText style={styles.linkText}>Create an account</AppText></AppText>
-          </Pressable>
-        </Link>
+        <TextInput
+          label="Email"
+          value={email}
+          onChangeText={(v) => {
+            setEmail(v);
+            if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+          }}
+          error={errors.email}
+          leftIcon="email-outline"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="next"
+        />
+        <TextInput
+          label="Password"
+          value={password}
+          onChangeText={(v) => {
+            setPassword(v);
+            if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+          }}
+          error={errors.password}
+          leftIcon="lock-outline"
+          password
+          autoComplete="password"
+          textContentType="password"
+          returnKeyType="go"
+          onSubmitEditing={submit}
+        />
 
-        {USE_MOCKS && (
-          <View style={styles.demo}>
-            <AppText variant="caption">Mock mode · tap to fill a test account</AppText>
-            <View style={styles.demoRow}>
-              {DEMO_ACCOUNTS.map((a) => (
-                <Button key={a.email} size="sm" variant="secondary" title={a.label} onPress={() => { setEmail(a.email); setPassword('password123'); }} />
-              ))}
-            </View>
+        <Button
+          title="Forgot password?"
+          variant="link"
+          style={styles.forgot}
+          onPress={() => Alert.alert('Forgot password', 'Password reset is coming soon.')}
+        />
+
+        <Button title="Log in" onPress={submit} loading={loading} fullWidth size="lg" />
+      </View>
+
+      <View style={styles.footer}>
+        <AppText variant="caption">New to Paws N' Play?</AppText>
+        <Button title="Create an account" variant="link" onPress={() => router.push('/register')} />
+      </View>
+
+      {USE_MOCKS && (
+        <View style={styles.demo}>
+          <Divider label="Test accounts (mock mode)" />
+          <View style={styles.demoRow}>
+            {DEMO_ACCOUNTS.map((a) => (
+              <Button key={a.email} title={a.label} variant="outline" size="sm" onPress={() => fillDemo(a.email)} />
+            ))}
           </View>
-        )}
-      </KeyboardAvoidingView>
+        </View>
+      )}
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center' },
-  form: { gap: spacing.md },
-  brand: { alignItems: 'center', gap: spacing.xs, marginBottom: spacing.lg },
-  logo: { fontSize: 48 },
-  error: { color: colors.danger },
-  link: { alignItems: 'center', paddingVertical: spacing.sm },
-  linkText: { color: colors.primaryDark, fontWeight: '600' },
-  demo: { marginTop: spacing.lg, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.primarySoft, gap: spacing.sm, alignItems: 'center' },
-  demoRow: { flexDirection: 'row', gap: spacing.sm },
-});
+const useStyles = makeStyles((t) => ({
+  header: { alignItems: 'center', gap: t.spacing.sm, marginBottom: t.spacing.xl },
+  form: { gap: t.spacing.md },
+  forgot: { alignSelf: 'flex-end', marginTop: -t.spacing.xs },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: t.spacing.xs, marginTop: t.spacing.lg },
+  demo: { gap: t.spacing.md, marginTop: t.spacing.xl },
+  demoRow: { flexDirection: 'row', justifyContent: 'center', gap: t.spacing.sm },
+}));

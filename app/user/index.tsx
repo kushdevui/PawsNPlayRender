@@ -1,19 +1,20 @@
 // User home: greeting + available services.
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { useSession } from '@/auth/session';
-import { AppText, Card, Screen, StateView } from '@/components/ui';
+import { AppText, Card, Screen, StateView } from '@/components/common';
 import { useServices } from '@/features/services/hooks';
-import { colors, spacing } from '@/theme';
+import { makeStyles } from '@/theme';
 import { formatDuration, formatPrice } from '@/utils/format';
 
 export default function UserHome() {
+  const styles = useStyles();
   const name = useSession((s) => s.user?.name.split(' ')[0]);
   const { data, isLoading, error, refetch, isRefetching } = useServices();
 
   return (
     <Screen>
       <View>
-        <AppText variant="title">Hi {name} 👋</AppText>
+        <AppText variant="heading">Hi {name}</AppText>
         <AppText variant="caption">What does your pet need today?</AppText>
       </View>
       {isLoading || error || !data?.data.length ? (
@@ -28,8 +29,8 @@ export default function UserHome() {
           renderItem={({ item }) => (
             <Card>
               <View style={styles.row}>
-                <AppText variant="heading">{item.name}</AppText>
-                <AppText style={styles.price}>{formatPrice(item.price, item.currency)}</AppText>
+                <AppText variant="subheading">{item.name}</AppText>
+                <AppText variant="bodyStrong">{formatPrice(item.price, item.currency)}</AppText>
               </View>
               <AppText variant="caption">{item.description}</AppText>
               <AppText variant="caption">{formatDuration(item.durationMinutes)} · {item.speciesAllowed.join(', ')}</AppText>
@@ -41,8 +42,7 @@ export default function UserHome() {
   );
 }
 
-const styles = StyleSheet.create({
-  list: { gap: spacing.md, paddingBottom: spacing.xl },
+const useStyles = makeStyles((t) => ({
+  list: { gap: t.spacing.md, paddingBottom: t.spacing.xl },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  price: { fontWeight: '700', color: colors.primaryDark },
-});
+}));
