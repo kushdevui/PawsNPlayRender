@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "PawsNPlay",
+    "slug": "pawsnplay",
+    "version": "1.0.0",
+    "scheme": "pawsnplay",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.pawsnplay.app",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.pawsnplay.app"
+    },
+    "web": {
+      "output": "single"
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

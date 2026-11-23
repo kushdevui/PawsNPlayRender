@@ -1,0 +1,48 @@
+{
+  "name": "pawsnplay",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "doctor": "npx expo-doctor",
+    "deps:fix": "npx expo install --fix"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "*",
+    "@tanstack/react-query": "^5.0.0",
+    "axios": "^1.7.0",
+    "expo": "~58.0.0",
+    "expo-constants": "*",
+    "expo-linking": "*",
+    "expo-router": "*",
+    "expo-secure-store": "*",
+    "expo-status-bar": "*",
+    "react": "*",
+    "react-dom": "*",
+    "react-native": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-screens": "*",
+    "react-native-web": "*",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "*",
+    "@types/jest": "*",
+    "@types/react": "*",
+    "eslint": "*",
+    "eslint-config-expo": "*",
+    "jest": "*",
+    "jest-expo": "*",
+    "typescript": "*"
+  },
+  "jest": {
+    "preset": "jest-expo"
+  }
+}
