@@ -46,7 +46,7 @@ export default function AdminDashboard() {
     <Screen edges={['top']} style={styles.noPad}>
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />}
         showsVerticalScrollIndicator={false}
       >
         <View>

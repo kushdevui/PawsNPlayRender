@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { toPaperTheme } from './paperTheme';
@@ -54,9 +54,14 @@ export function useThemeSwitcher() {
  *   const useStyles = makeStyles((t) => ({ box: { padding: t.spacing.lg, backgroundColor: t.colors.surface } }));
  *   function Comp() { const styles = useStyles(); ... }
  */
-export function makeStyles<T extends StyleSheet.NamedStyles<T>>(factory: (theme: AppTheme) => T) {
+type AnyStyle = ViewStyle | TextStyle | ImageStyle;
+type NamedStyles<T> = { [P in keyof T]: AnyStyle };
+
+// `T & NamedStyles<any>` gives the factory's object literal a contextual type, so values like
+// 'row' / 'center' stay literal types (React Native 0.88 types removed StyleSheet.NamedStyles).
+export function makeStyles<T extends NamedStyles<T> | NamedStyles<any>>(factory: (theme: AppTheme) => T & NamedStyles<any>) {
   return function useStyles(): T {
     const theme = useTheme();
-    return useMemo(() => StyleSheet.create(factory(theme)), [theme]);
+    return useMemo(() => StyleSheet.create(factory(theme)) as T, [theme]);
   };
 }
