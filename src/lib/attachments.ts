@@ -1,10 +1,10 @@
 // Picking, "uploading" and opening attachments (vaccination cards etc.).
 // All Expo modules used here work in Expo Go.
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
-import { USE_MOCKS } from '@/api/client';
+import { USE_MOCKS, api } from '@/api/client';
 import type { DogDocument } from '@/api/types';
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -65,27 +65,48 @@ export async function pickDocument(): Promise<LocalFile | null> {
 
 /**
  * Turn a picked local file into a stored document.
- * Mock mode keeps the local URI (only on this device, survives until the app cache is cleared).
- * TODO(api): real mode -> multipart POST /uploads (or a pre-signed S3 URL) and store the returned URL.
+ * Mock mode keeps the local URI (only on this device). Real API: multipart POST /uploads,
+ * which stores the file and returns its URL (BACKEND_API_SPEC §7.11).
  */
 export async function uploadAttachment(file: LocalFile, kind: DogDocument['kind'] = 'vaccination'): Promise<DogDocument> {
+  let uri = file.uri;
+  let size = file.size;
   if (!USE_MOCKS) {
-    // Placeholder until the backend exposes an upload endpoint.
-    throw new Error('File upload is not available yet on the live server.');
+    const form = new FormData();
+    // React Native's FormData accepts { uri, name, type } for files.
+    form.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
+    const res = await api.post('/uploads', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      transformRequest: (data) => data, // keep FormData as-is
+      timeout: 60_000,
+    });
+    const uploaded = res.data?.data ?? res.data;
+    if (!uploaded?.url) throw new Error('Upload failed - the server did not return a file URL.');
+    uri = uploaded.url;
+    size = uploaded.size ?? size;
   }
   return {
     id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     kind,
     name: file.name,
-    uri: file.uri,
+    uri,
     mimeType: file.mimeType,
-    size: file.size,
+    size,
     uploadedAt: new Date().toISOString(),
   };
 }
 
-/** Open a PDF (or any file) in another app via the share sheet. */
+/** Open a PDF (or any file): web links in the browser, local files via the share sheet. */
 export async function openExternally(doc: Pick<DogDocument, 'uri' | 'mimeType' | 'name'>) {
+  // Files stored on the server are web links: open them in the browser / PDF viewer.
+  if (/^https?:\/\//.test(doc.uri)) {
+    try {
+      await Linking.openURL(doc.uri);
+    } catch (e) {
+      Alert.alert('Cannot open file', (e as Error).message);
+    }
+    return;
+  }
   if (!(await Sharing.isAvailableAsync())) {
     Alert.alert('Cannot open file', 'Sharing is not available on this device.');
     return;

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useEffect, type ReactNode } from 'react';
+import { Keyboard, ScrollView, View } from 'react-native';
 import { Modal, Portal } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles } from '@/theme';
@@ -21,6 +21,9 @@ interface Props {
 export function Sheet({ visible, onDismiss, title, children, footer, scrollable = true }: Props) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  useEffect(() => {
+    if (visible) Keyboard.dismiss();
+  }, [visible]);
   return (
     <Portal>
       <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={[styles.sheet, { paddingBottom: insets.bottom + 16 }]} style={styles.modal}>

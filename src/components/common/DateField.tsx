@@ -10,6 +10,10 @@ interface Props {
   value: string | null;
   onChange: (dateKey: string) => void;
   minDate?: string;
+  /** Latest selectable date 'YYYY-MM-DD' (e.g. today for date of birth). */
+  maxDate?: string;
+  /** Open on the year grid (for dates years away, like date of birth). */
+  startWithYear?: boolean;
   /** Highlights the range from this date to the selection (e.g. check-in). */
   rangeStart?: string | null;
   error?: string;
@@ -19,7 +23,7 @@ interface Props {
 }
 
 /** Date input: tap -> calendar sheet. Value is a local 'YYYY-MM-DD'. */
-export function DateField({ label, value, onChange, minDate, rangeStart, error, helperText, placeholder = 'Select date', disabled }: Props) {
+export function DateField({ label, value, onChange, minDate, maxDate, startWithYear, rangeStart, error, helperText, placeholder = 'Select date', disabled }: Props) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -37,6 +41,8 @@ export function DateField({ label, value, onChange, minDate, rangeStart, error, 
         <Calendar
           value={value}
           minDate={minDate}
+          maxDate={maxDate}
+          startWithYear={startWithYear}
           rangeStart={rangeStart}
           onChange={(key) => {
             onChange(key);

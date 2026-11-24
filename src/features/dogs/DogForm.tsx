@@ -81,7 +81,7 @@ export function DogForm({ initial, submitLabel, submitting, onSubmit }: Props) {
       <TextInput label="Breed" value={f.breed} onChangeText={set('breed')} autoCapitalize="words" placeholder="e.g. Indie, Labrador" />
       <SegmentedControl label="Gender" value={f.gender} onChange={set('gender')} options={genderOptions} />
       <View style={styles.row}>
-        <View style={styles.cell}><DateField label="Date of birth" value={f.dateOfBirth} onChange={set('dateOfBirth')} placeholder="Optional" /></View>
+        <View style={styles.cell}><DateField label="Date of birth" value={f.dateOfBirth} onChange={set('dateOfBirth')} placeholder="Optional" maxDate={toDateKey(new Date())} startWithYear /></View>
         <View style={styles.cell}><TextInput label="Weight (kg)" value={f.weightKg} onChangeText={(v) => set('weightKg')(v.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" error={errors.weightKg} /></View>
       </View>
       <TextInput label="Colour" value={f.color} onChangeText={set('color')} placeholder="Optional" />

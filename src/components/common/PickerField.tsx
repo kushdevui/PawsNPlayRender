@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { Keyboard, Pressable, View } from 'react-native';
 import { HelperText, TextInput as PaperTextInput } from 'react-native-paper';
 import { makeStyles, useTheme } from '@/theme';
 import type { IconName } from './Icon';
@@ -22,7 +22,12 @@ export function PickerField({ label, displayValue, placeholder, onPress, icon = 
   const message = error || helperText;
   return (
     <View style={styles.wrap}>
-      <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={`${label}: ${displayValue || placeholder || 'not set'}`}>
+      <Pressable
+        onPress={() => {
+          Keyboard.dismiss(); // close the keyboard so the picker sheet is fully visible
+          onPress();
+        }}
+        disabled={disabled} accessibilityRole="button" accessibilityLabel={`${label}: ${displayValue || placeholder || 'not set'}`}>
         <View pointerEvents="none">
           <PaperTextInput
             mode="outlined"
