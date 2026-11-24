@@ -1,13 +1,30 @@
 import axios, { AxiosError } from 'axios';
+import Constants from 'expo-constants';
 import { mockAdapter } from './mock/mockAdapter';
 import type { ApiErrorBody } from './types';
 
 /**
- * Mock JSON backend is the DEFAULT (no .env needed). Set EXPO_PUBLIC_USE_MOCKS=false
- * (and EXPO_PUBLIC_API_URL) only when the real Node API exists.
+ * The REAL Node API is the default. Set EXPO_PUBLIC_USE_MOCKS=true to use the mock JSON backend
+ * (mock/data/*.json) instead, e.g. when the API isn't running.
  */
-export const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS !== 'false';
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+export const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true';
+
+const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
+
+/**
+ * API base URL. In development, "localhost" in EXPO_PUBLIC_API_URL is swapped for the computer's
+ * LAN address that Expo is serving from (Constants.expoConfig.hostUri, e.g. "192.168.1.5:8081"),
+ * so a phone on the same Wi-Fi reaches the API running on that computer. The backend must listen
+ * on 0.0.0.0, not only 127.0.0.1. Set a full URL (e.g. https://api.pawsnplay.com/api/v1) to skip this.
+ */
+const resolveApiUrl = () => {
+  const raw = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+  if (!__DEV__ || !/\/\/(localhost|127\.0\.0\.1)\b/.test(raw)) return raw;
+  const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+  return devHost && IPV4.test(devHost) ? raw.replace(/localhost|127\.0\.0\.1/, devHost) : raw;
+};
+
+export const API_URL = resolveApiUrl();
 
 if (__DEV__) console.log(`[api] ${USE_MOCKS ? 'MOCK mode (mock/data/*.json)' : `REAL API: ${API_URL}`}`);
 

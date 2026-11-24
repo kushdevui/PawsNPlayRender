@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { router } from 'expo-router';
-import { USE_MOCKS } from '@/api/client';
+import { API_URL, USE_MOCKS } from '@/api/client';
 import { useSession } from '@/auth/session';
 import { AppText, Button, Divider, InlineAlert, Logo, Screen, TextInput } from '@/components/common';
 import { makeStyles } from '@/theme';
@@ -112,6 +112,12 @@ export default function LoginScreen() {
         <Button title="Create an account" variant="link" onPress={() => router.push('/register')} />
       </View>
 
+      {__DEV__ && (
+        <AppText variant="caption" align="center" color="textSubtle" style={styles.server}>
+          {USE_MOCKS ? 'Using mock data (mock/data)' : `Server: ${API_URL}`}
+        </AppText>
+      )}
+
       {USE_MOCKS && (
         <View style={styles.demo}>
           <Divider label="Admin test accounts (mock mode)" />
@@ -132,5 +138,6 @@ const useStyles = makeStyles((t) => ({
   forgot: { alignSelf: 'flex-end', marginTop: -t.spacing.xs },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: t.spacing.xs, marginTop: t.spacing.lg },
   demo: { gap: t.spacing.md, marginTop: t.spacing.xl },
+  server: { marginTop: t.spacing.lg },
   demoRow: { flexDirection: 'row', justifyContent: 'center', gap: t.spacing.sm },
 }));

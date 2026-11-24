@@ -16,10 +16,10 @@ mock/
 ```
 
 ## Switching mock <-> real API
-`.env`:
+The real API is the default. `.env`:
 ```
-EXPO_PUBLIC_USE_MOCKS=true          # true = serve from mock/, false = real backend
-EXPO_PUBLIC_API_URL=http://192.168.1.10:4000/api/v1
+EXPO_PUBLIC_USE_MOCKS=true                          # opt in to mock/data/*.json
+EXPO_PUBLIC_API_URL=http://localhost:4000/api/v1    # localhost -> your Mac's LAN IP automatically in dev
 ```
 Restart `npx expo start -c` after changing env vars.
 

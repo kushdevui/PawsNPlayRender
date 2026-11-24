@@ -4,7 +4,7 @@ React Native app (Expo SDK 58, Expo Router, TypeScript, React Native Paper) for 
 Phase 1 is the **admin board**: dogs, bookings (check-in/out), capacity dashboard.
 Requirements & architecture: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 Runs on Android and iOS. The Node.js REST backend lives in a separate repo; until it is ready the
-app runs on mock JSON (`mock/`).
+app can run on mock JSON (`mock/`, opt-in with `EXPO_PUBLIC_USE_MOCKS=true`).
 
 ## Getting started
 Requires Node 22.13+ or 24.3+ (odd versions are not supported). With nvm: `nvm install && nvm use` (reads `.nvmrc`).
@@ -12,7 +12,7 @@ Requires Node 22.13+ or 24.3+ (odd versions are not supported). With nvm: `nvm i
 ```bash
 npm install                # use Node 22 (nvm use)
 npx expo install --fix     # pins every Expo package to the SDK 58-compatible version
-cp .env.example .env       # optional - mock data is used by default
+cp .env.example .env       # real API on :4000 by default; set EXPO_PUBLIC_USE_MOCKS=true for mock data
 npx expo start             # press a = Android, i = iOS simulator, or scan the QR code
 ```
 
