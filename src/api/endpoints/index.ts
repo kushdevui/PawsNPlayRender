@@ -1,60 +1,77 @@
 // One function per endpoint. Screens use these through TanStack Query hooks,
 // never axios directly. Same code works with mocks and with the real backend.
+// Responses pass through ../normalize so a server shape that differs from the contract
+// never crashes a screen (missing fields get defaults + a dev warning).
 import { api } from '../client';
+import {
+  normalizeAuth, normalizeBilling, normalizeBooking, normalizeDashboard, normalizeDog, normalizeOccupancy, normalizeSettings,
+  normalizeUser,
+} from '../normalize';
 import type {
-  ApiItem, ApiList, AuthResponse, BillingSummary, Booking, BookingFilters, BookingInput, BookingStatus, PaymentInput,
+  ApiList, AuthResponse, BillingSummary, Booking, BookingFilters, BookingInput, BookingStatus, PaymentInput,
   DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, OccupancyCalendar, Role, User, UserStatus,
 } from '../types';
 
-const item = <T>(p: Promise<{ data: ApiItem<T> }>) => p.then((r) => r.data.data);
-const list = <T>(p: Promise<{ data: ApiList<T> }>) => p.then((r) => r.data);
+/** Unwrap `{ data }` (or a bare object, if the server skips the envelope). */
+const item = <T>(p: Promise<{ data: any }>, map: (raw: any) => T = (x) => x as T) =>
+  p.then((r) => map(r.data && typeof r.data === 'object' && 'data' in r.data ? r.data.data : r.data));
+
+/** Unwrap `{ data: [], meta }` (or a bare array). */
+const list = <T>(p: Promise<{ data: any }>, map: (raw: any) => T = (x) => x as T): Promise<ApiList<T>> =>
+  p.then((r) => {
+    const body = r.data;
+    const rows: any[] = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+    const meta = body?.meta ?? { total: rows.length, page: 1, limit: rows.length };
+    return { data: rows.map(map), meta };
+  });
 
 export const authApi = {
-  login: (email: string, password: string) =>
-    item<AuthResponse>(api.post('/auth/login', { email, password })),
+  login: (email: string, password: string) => item<AuthResponse>(api.post('/auth/login', { email, password }), normalizeAuth),
   register: (body: { name: string; email: string; password: string; phone?: string }) =>
-    item<AuthResponse>(api.post('/auth/register', body)),
-  refresh: (refreshToken: string) =>
-    item<{ accessToken: string }>(api.post('/auth/refresh', { refreshToken })),
+    item<AuthResponse>(api.post('/auth/register', body), normalizeAuth),
+  refresh: (refreshToken: string) => item<{ accessToken: string }>(api.post('/auth/refresh', { refreshToken })),
   logout: () => item<{ success: boolean }>(api.post('/auth/logout')),
-  me: () => item<User>(api.get('/me')),
-  updateMe: (body: Partial<Pick<User, 'name' | 'phone' | 'avatarUrl'>>) => item<User>(api.patch('/me', body)),
+  me: () => item<User>(api.get('/me'), normalizeUser),
+  updateMe: (body: Partial<Pick<User, 'name' | 'phone' | 'avatarUrl'>>) => item<User>(api.patch('/me', body), normalizeUser),
 };
 
 export const usersApi = {
   list: (params?: ListParams & { role?: Role; status?: UserStatus; search?: string }) =>
-    list<User>(api.get('/users', { params })),
-  get: (id: string) => item<User>(api.get(`/users/${id}`)),
-  update: (id: string, body: { role?: Role; status?: UserStatus }) => item<User>(api.patch(`/users/${id}`, body)),
+    list<User>(api.get('/users', { params }), normalizeUser),
+  get: (id: string) => item<User>(api.get(`/users/${id}`), normalizeUser),
+  update: (id: string, body: { role?: Role; status?: UserStatus }) => item<User>(api.patch(`/users/${id}`, body), normalizeUser),
 };
 
 export const dogsApi = {
-  list: (params?: ListParams & { search?: string; status?: DogStatus }) => list<Dog>(api.get('/dogs', { params })),
-  get: (id: string) => item<Dog>(api.get(`/dogs/${id}`)),
-  create: (body: DogInput) => item<Dog>(api.post('/dogs', body)),
-  update: (id: string, body: Partial<DogInput>) => item<Dog>(api.patch(`/dogs/${id}`, body)),
+  list: (params?: ListParams & { search?: string; status?: DogStatus }) => list<Dog>(api.get('/dogs', { params }), normalizeDog),
+  get: (id: string) => item<Dog>(api.get(`/dogs/${id}`), normalizeDog),
+  create: (body: DogInput) => item<Dog>(api.post('/dogs', body), normalizeDog),
+  update: (id: string, body: Partial<DogInput>) => item<Dog>(api.patch(`/dogs/${id}`, body), normalizeDog),
 };
 
 export const bookingsApi = {
-  list: (params?: ListParams & BookingFilters) => list<Booking>(api.get('/bookings', { params })),
-  get: (id: string) => item<Booking>(api.get(`/bookings/${id}`)),
-  create: (body: BookingInput) => item<Booking>(api.post('/bookings', body)),
-  update: (id: string, body: Partial<BookingInput>) => item<Booking>(api.patch(`/bookings/${id}`, body)),
+  list: (params?: ListParams & BookingFilters) => list<Booking>(api.get('/bookings', { params }), normalizeBooking),
+  get: (id: string) => item<Booking>(api.get(`/bookings/${id}`), normalizeBooking),
+  create: (body: BookingInput) => item<Booking>(api.post('/bookings', body), normalizeBooking),
+  update: (id: string, body: Partial<BookingInput>) => item<Booking>(api.patch(`/bookings/${id}`, body), normalizeBooking),
   setStatus: (id: string, status: Exclude<BookingStatus, 'pending'>) =>
-    item<Booking>(api.patch(`/bookings/${id}/status`, { status })),
-  addPayment: (id: string, body: PaymentInput) => item<Booking>(api.post(`/bookings/${id}/payments`, body)),
-  removePayment: (id: string, paymentId: string) => item<Booking>(api.delete(`/bookings/${id}/payments/${paymentId}`)),
+    item<Booking>(api.patch(`/bookings/${id}/status`, { status }), normalizeBooking),
+  addPayment: (id: string, body: PaymentInput) => item<Booking>(api.post(`/bookings/${id}/payments`, body), normalizeBooking),
+  removePayment: (id: string, paymentId: string) =>
+    item<Booking>(api.delete(`/bookings/${id}/payments/${paymentId}`), normalizeBooking),
 };
 
 export const settingsApi = {
-  get: () => item<FacilitySettings>(api.get('/settings')),
-  update: (body: Partial<FacilitySettings>) => item<FacilitySettings>(api.patch('/settings', body)),
+  get: () => item<FacilitySettings>(api.get('/settings'), normalizeSettings),
+  update: (body: Partial<FacilitySettings>) => item<FacilitySettings>(api.patch('/settings', body), normalizeSettings),
 };
 
 export const adminApi = {
-  dashboard: () => item<DashboardStats>(api.get('/admin/dashboard')),
+  dashboard: () => item<DashboardStats>(api.get('/admin/dashboard'), normalizeDashboard),
   /** Billing for stays checking in within [from, to) (ISO). */
-  billing: (from: string, to: string) => item<BillingSummary>(api.get('/admin/billing', { params: { from, to } })),
+  billing: (from: string, to: string) =>
+    item<BillingSummary>(api.get('/admin/billing', { params: { from, to } }), normalizeBilling),
   /** Per-day occupancy for local dates [from, to), 'YYYY-MM-DD'. */
-  occupancy: (from: string, to: string) => item<OccupancyCalendar>(api.get('/admin/occupancy', { params: { from, to } })),
+  occupancy: (from: string, to: string) =>
+    item<OccupancyCalendar>(api.get('/admin/occupancy', { params: { from, to } }), normalizeOccupancy),
 };
