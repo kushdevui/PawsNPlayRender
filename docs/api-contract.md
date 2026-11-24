@@ -1,5 +1,6 @@
 # API contract (Node REST backend)
 
+**Full backend contract for the API team: [`docs/BACKEND_API_SPEC.md`](BACKEND_API_SPEC.md)** (models, every route, rules, seed, acceptance tests).
 Machine-readable list: **`mock/endpoints.json`**. Seed data: **`mock/data/*.json`**.
 Business rules and MongoDB schemas: **`docs/ARCHITECTURE.md`**.
 The app runs against the mock until the backend is ready (`EXPO_PUBLIC_USE_MOCKS=true`).
