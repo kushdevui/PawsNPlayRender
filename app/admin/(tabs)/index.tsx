@@ -1,6 +1,6 @@
 // Admin dashboard: live capacity, today's arrivals/departures, next 7 days.
 import { useState } from 'react';
-import { Alert, RefreshControl, ScrollView, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import type { Booking } from '@/api/types';
 import { useSession } from '@/auth/session';
@@ -14,6 +14,7 @@ import { CapacitySheet } from '@/features/settings/CapacitySheet';
 import { makeStyles } from '@/theme';
 import { formatDate } from '@/utils/date';
 import { formatPrice, plural } from '@/utils/format';
+import { showAlert } from '@/lib/dialog';
 
 const openBooking = (b: Booking) => router.push({ pathname: '/admin/booking/[id]', params: { id: b.id } });
 
@@ -27,7 +28,7 @@ export default function AdminDashboard() {
   const [findingDog, setFindingDog] = useState(false);
 
   const changeStatus = (b: Booking, status: 'checked_in' | 'checked_out') =>
-    setStatus.mutate({ id: b.id, status }, { onError: (e) => Alert.alert('Could not update', e.message) });
+    setStatus.mutate({ id: b.id, status }, { onError: (e) => showAlert('Could not update', e.message) });
 
   if (isLoading || error || !data) {
     return (

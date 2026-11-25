@@ -1,6 +1,6 @@
 // Dog detail: stays (past and upcoming), new booking, edit profile, archive/restore.
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { AppText, Avatar, Badge, Button, Card, InfoRow, InlineAlert, Screen, SectionHeader, StateView } from '@/components/common';
 import { BookingCard } from '@/features/bookings/BookingCard';
@@ -13,6 +13,7 @@ import { temperamentLabel, temperamentTone } from '@/features/dogs/options';
 import { makeStyles } from '@/theme';
 import { formatDateLong, fromDateKey } from '@/utils/date';
 import { ageFrom } from '@/utils/format';
+import { showAlert } from '@/lib/dialog';
 
 export default function DogDetail() {
   const styles = useStyles();
@@ -38,7 +39,7 @@ export default function DogDetail() {
       update.mutate({ status: archived ? 'active' : 'archived' }, { onError: (e) => setActionError(e.message) });
     };
     if (archived) return doIt();
-    Alert.alert('Archive dog?', `${dog.name} will be hidden from lists and new bookings. You can restore later.`, [
+    showAlert('Archive dog?', `${dog.name} will be hidden from lists and new bookings. You can restore later.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Archive', style: 'destructive', onPress: doIt },
     ]);

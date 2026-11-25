@@ -1,6 +1,6 @@
 // Payment summary + history for one booking, with "Record payment".
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import type { Booking, Payment } from '@/api/types';
 import { AppText, Badge, Button, Card, Divider, Icon, InlineAlert, ProgressBar } from '@/components/common';
 import { makeStyles } from '@/theme';
@@ -9,6 +9,7 @@ import { formatPrice } from '@/utils/format';
 import { useRemovePayment } from './hooks';
 import { paymentBadgeLabel, paymentMethodIcon, paymentMethodLabel, paymentStatusTone, paymentTypeLabel } from './labels';
 import { RecordPaymentSheet } from './RecordPaymentSheet';
+import { showAlert } from '@/lib/dialog';
 
 export function PaymentCard({ booking }: { booking: Booking }) {
   const styles = useStyles();
@@ -20,7 +21,7 @@ export function PaymentCard({ booking }: { booking: Booking }) {
   const canRecord = cancelled ? booking.amountPaid > 0 : booking.balanceDue !== 0;
 
   const confirmRemove = (p: Payment) =>
-    Alert.alert('Remove payment?', `${paymentTypeLabel[p.type]} of ${formatPrice(p.amount, c)} will be removed. Use this only to fix a mistake.`, [
+    showAlert('Remove payment?', `${paymentTypeLabel[p.type]} of ${formatPrice(p.amount, c)} will be removed. Use this only to fix a mistake.`, [
       { text: 'Keep', style: 'cancel' },
       {
         text: 'Remove',

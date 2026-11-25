@@ -1,6 +1,6 @@
 // Booking detail: status actions (check in / out / cancel), dog care info, edit form.
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import type { Booking } from '@/api/types';
 import { AppText, Badge, Button, Card, InfoRow, InlineAlert, Screen, StateView } from '@/components/common';
@@ -12,6 +12,7 @@ import { PaymentCard } from '@/features/payments/PaymentCard';
 import { makeStyles } from '@/theme';
 import { formatDateTime } from '@/utils/date';
 import { formatPrice, plural } from '@/utils/format';
+import { showAlert } from '@/lib/dialog';
 
 export default function BookingDetail() {
   const styles = useStyles();
@@ -37,7 +38,7 @@ export default function BookingDetail() {
   };
 
   const confirmCancel = () =>
-    Alert.alert('Cancel booking?', `${booking.dog?.name ?? 'This dog'}'s stay will be cancelled. This cannot be undone.`, [
+    showAlert('Cancel booking?', `${booking.dog?.name ?? 'This dog'}'s stay will be cancelled. This cannot be undone.`, [
       { text: 'Keep booking', style: 'cancel' },
       { text: 'Cancel booking', style: 'destructive', onPress: () => run('cancelled') },
     ]);

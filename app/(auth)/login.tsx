@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { API_URL, USE_MOCKS } from '@/api/client';
 import { useSession } from '@/auth/session';
 import { AppText, Button, Divider, InlineAlert, Logo, Screen, TextInput } from '@/components/common';
 import { makeStyles } from '@/theme';
+import { showAlert } from '@/lib/dialog';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -101,7 +102,7 @@ export default function LoginScreen() {
           title="Forgot password?"
           variant="link"
           style={styles.forgot}
-          onPress={() => Alert.alert('Forgot password', 'Password reset is coming soon.')}
+          onPress={() => showAlert('Forgot password', 'Password reset is coming soon.')}
         />
 
         <Button title="Log in" onPress={submit} loading={loading} fullWidth size="lg" />

@@ -1,11 +1,12 @@
 // Vaccination records for a dog: add (camera / gallery / PDF), view, remove.
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import type { DogDocument } from '@/api/types';
 import { AppText, AttachmentList, Button } from '@/components/common';
 import { formatBytes, openExternally, pickDocument, pickFromGallery, takePhoto, uploadAttachment, type LocalFile } from '@/lib/attachments';
 import { makeStyles } from '@/theme';
 import { formatDateLong } from '@/utils/date';
+import { showAlert } from '@/lib/dialog';
 
 interface Props {
   documents: DogDocument[];
@@ -23,7 +24,7 @@ export function VaccinationDocs({ documents, onChange }: Props) {
 
   const add = async (pick: () => Promise<LocalFile | null>) => {
     if (!onChange) return;
-    if (documents.length >= MAX_DOCS) return Alert.alert('Limit reached', `Up to ${MAX_DOCS} documents per dog.`);
+    if (documents.length >= MAX_DOCS) return showAlert('Limit reached', `Up to ${MAX_DOCS} documents per dog.`);
     try {
       setBusy(true);
       const file = await pick();
@@ -31,14 +32,14 @@ export function VaccinationDocs({ documents, onChange }: Props) {
       const doc = await uploadAttachment(file, 'vaccination');
       onChange([...documents, doc]);
     } catch (e) {
-      Alert.alert('Could not add file', (e as Error).message);
+      showAlert('Could not add file', (e as Error).message);
     } finally {
       setBusy(false);
     }
   };
 
   const remove = (id: string) =>
-    Alert.alert('Remove document?', 'It will be removed when you save the dog.', [
+    showAlert('Remove document?', 'It will be removed when you save the dog.', [
       { text: 'Keep', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => onChange?.(documents.filter((d) => d.id !== id)) },
     ]);

@@ -1,11 +1,12 @@
 // Picking, "uploading" and opening attachments (vaccination cards etc.).
 // All Expo modules used here work in Expo Go.
-import { Alert, Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
 import { USE_MOCKS, api } from '@/api/client';
 import type { DogDocument } from '@/api/types';
+import { showAlert } from '@/lib/dialog';
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
@@ -26,7 +27,7 @@ const guessMime = (name: string, fallback = 'application/octet-stream') => {
 
 const checkSize = (file: LocalFile) => {
   if (file.size && file.size > MAX_FILE_BYTES) {
-    Alert.alert('File too large', `${file.name} is over 10 MB. Please choose a smaller file.`);
+    showAlert('File too large', `${file.name} is over 10 MB. Please choose a smaller file.`);
     return null;
   }
   return file;
@@ -36,7 +37,7 @@ const checkSize = (file: LocalFile) => {
 export async function takePhoto(): Promise<LocalFile | null> {
   const perm = await ImagePicker.requestCameraPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('Camera permission needed', 'Allow camera access in Settings to photograph documents.');
+    showAlert('Camera permission needed', 'Allow camera access in Settings to photograph documents.');
     return null;
   }
   const res = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7 });
@@ -73,10 +74,18 @@ export async function uploadAttachment(file: LocalFile, kind: DogDocument['kind'
   let size = file.size;
   if (!USE_MOCKS) {
     const form = new FormData();
-    // React Native's FormData accepts { uri, name, type } for files.
-    form.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
+    const isWeb = Platform.OS === 'web';
+    if (isWeb) {
+      // Browser: the picker gives a blob:/data: URI - send the real bytes.
+      const blob = await (await fetch(file.uri)).blob();
+      form.append('file', new File([blob], file.name, { type: file.mimeType }));
+    } else {
+      // React Native's FormData accepts { uri, name, type } for files.
+      form.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
+    }
     const res = await api.post('/uploads', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      // Browsers must set the multipart boundary themselves.
+      headers: isWeb ? { 'Content-Type': undefined } : { 'Content-Type': 'multipart/form-data' },
       transformRequest: (data) => data, // keep FormData as-is
       timeout: 60_000,
     });
@@ -103,18 +112,18 @@ export async function openExternally(doc: Pick<DogDocument, 'uri' | 'mimeType' |
     try {
       await Linking.openURL(doc.uri);
     } catch (e) {
-      Alert.alert('Cannot open file', (e as Error).message);
+      showAlert('Cannot open file', (e as Error).message);
     }
     return;
   }
   if (!(await Sharing.isAvailableAsync())) {
-    Alert.alert('Cannot open file', 'Sharing is not available on this device.');
+    showAlert('Cannot open file', 'Sharing is not available on this device.');
     return;
   }
   try {
     await Sharing.shareAsync(doc.uri, { mimeType: doc.mimeType, dialogTitle: doc.name, UTI: isPdf(doc.mimeType) ? 'com.adobe.pdf' : undefined });
   } catch (e) {
-    Alert.alert('Cannot open file', (e as Error).message);
+    showAlert('Cannot open file', (e as Error).message);
   }
 }
 
