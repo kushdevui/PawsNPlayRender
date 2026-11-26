@@ -52,11 +52,29 @@ src/
   theme/             # brand palette -> semantic theme -> Paper theme (change look in one place)
 mock/                # mock backend: endpoints.json + data/*.json
 docs/api-contract.md # API contract for the backend repo
+scripts/deploy-web.sh # build + publish the web version on the EC2 instance
 ```
 
 ## Builds
 `eas.json` has `development`, `preview` (internal APK / ad-hoc) and `production` profiles.
 Production sets `EXPO_PUBLIC_USE_MOCKS=false`. Update `EXPO_PUBLIC_API_URL` there when the API is live.
+
+## Web deploy (EC2, pawsnplaywithme.com)
+The same code is also served as a website: `/faqs` and `/know-your-dog` (public) and `/admin` (team app).
+First run the server repo's `scripts/deploy-ec2.sh` on the instance (Node 22, Nginx, HTTPS, API). Then, as the normal user:
+
+```bash
+# first time
+git clone -b feat/admin-boarding https://github.com/kushdevui/PawsNPlayRender.git ~/PawsNPlayRender && cd ~/PawsNPlayRender && bash scripts/deploy-web.sh
+# every update
+cd ~/PawsNPlayRender && bash scripts/deploy-web.sh
+```
+
+`scripts/deploy-web.sh` fast-forwards the branch (refuses if there are uncommitted changes unless `FORCE=1`; `BRANCH=name` switches branch),
+runs `npm ci`/`npm install`, builds with `npx expo export -p web` using `EXPO_PUBLIC_API_URL=$SITE_URL/api/v1` and mocks off
+(`SITE_URL` comes from `~/.pawsnplay-deploy`, written by the server script; no `.env` is written), swaps the build into
+`/var/www/pawsnplay/app` (previous build kept in `app.prev`), reloads Nginx and checks `/faqs`, `/know-your-dog`, `/admin` and `/api/v1/health`.
+A failed build leaves the live site untouched. Build output goes to `dist-web/` (git-ignored).
 
 ## Working with Claude Code
 Project rules are in `CLAUDE.md`. The `render-agent` subagent (`.claude/agents/render-agent.md`)
