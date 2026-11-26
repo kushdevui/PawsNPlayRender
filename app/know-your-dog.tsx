@@ -2,7 +2,7 @@
 // logged out, on the web build (https://pawsnplaywithme.com/know-your-dog) or in the app. Posts to POST /questionnaires.
 import { useCallback, useRef, useState } from 'react';
 import { Platform, ScrollView, View, useWindowDimensions } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Stack } from 'expo-router';
 import { AppText, Button, InlineAlert, Screen, TextInput } from '@/components/common';
 import { KydSection } from '@/features/knowYourDog/KydSection';
 import { KydDone, KydHero } from '@/features/knowYourDog/KydViews';
@@ -109,7 +109,7 @@ export default function KnowYourDogScreen() {
           }}
         >
           {doneFor !== null ? (
-            <KydDone dogName={doneFor} onAnother={startAgain} onFaqs={() => router.push('/faqs')} />
+            <KydDone dogName={doneFor} onAnother={startAgain} />
           ) : (
             <>
               <KydHero wide={wide} />

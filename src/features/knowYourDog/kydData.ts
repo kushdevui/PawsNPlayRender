@@ -237,5 +237,4 @@ export const kydText = {
   doneText: (dogName: string) =>
     `We've got your answers for ${dogName}. Our team will go through them before the stay and call you if we have any questions.`,
   another: 'Fill in for another dog',
-  faqs: 'Read our FAQs',
 };

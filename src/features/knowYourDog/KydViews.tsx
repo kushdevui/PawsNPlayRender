@@ -23,7 +23,7 @@ export function KydHero({ wide }: { wide: boolean }) {
   );
 }
 
-export function KydDone({ dogName, onAnother, onFaqs }: { dogName: string; onAnother: () => void; onFaqs: () => void }) {
+export function KydDone({ dogName, onAnother }: { dogName: string; onAnother: () => void }) {
   const theme = useTheme();
   const styles = useStyles();
   return (
@@ -35,7 +35,6 @@ export function KydDone({ dogName, onAnother, onFaqs }: { dogName: string; onAno
       <AppText variant="body" color="textMuted" align="center" style={styles.intro}>{kydText.doneText(dogName)}</AppText>
       <View style={styles.actions}>
         <Button title={kydText.another} variant="outline" onPress={onAnother} icon="paw" />
-        <Button title={kydText.faqs} variant="outline" onPress={onFaqs} icon="help-circle-outline" />
       </View>
     </View>
   );
