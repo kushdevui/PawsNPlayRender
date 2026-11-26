@@ -10,7 +10,7 @@ export function FieldLabel({ label, hint, required }: { label: string; hint?: st
   const styles = useStyles();
   return (
     <View style={styles.label}>
-      <AppText variant="bodyStrong">
+      <AppText variant="body">
         {label}
         {required && <AppText variant="bodyStrong" color="primaryText">{' *'}</AppText>}
       </AppText>

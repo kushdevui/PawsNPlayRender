@@ -25,7 +25,7 @@ export function KydRates({ values, onChange }: Props) {
           <View key={row.key} style={styles.row}>
             {i > 0 && <Divider />}
             <View style={[styles.head, wide && styles.headWide]}>
-              <AppText variant="bodyStrong" style={wide ? styles.question : undefined}>{row.label}</AppText>
+              <AppText variant="body" style={wide ? styles.question : undefined}>{row.label}</AppText>
               <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel={row.label}>
                 {RATE_OPTIONS.map((o) => (
                   <Chip
