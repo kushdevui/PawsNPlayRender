@@ -1,8 +1,7 @@
-// Top bar shared by the public pages (/faqs, /know-your-dog): logo + name, a way in for the team,
-// and an optional progress bar (the Know Your Dog form shows how much is filled in).
+// Top bar shared by the public pages (/faqs, /know-your-dog): logo + name and an optional progress bar (the Know Your Dog form shows how much is filled in).
 import { View } from 'react-native';
 import { router } from 'expo-router';
-import { AppText, Button, Logo, ProgressBar } from '@/components/common';
+import { AppText, Logo, ProgressBar } from '@/components/common';
 import { makeStyles, useTheme } from '@/theme';
 
 interface Props {
@@ -29,7 +28,6 @@ export function PublicHeader({ progress, linkHome = false }: Props) {
               Paws N&apos; Play
             </AppText>
           </View>
-          <Button title="Team login" variant="outline" size="sm" onPress={() => router.push('/login')} />
         </View>
         {progress !== undefined && (
           <View accessibilityLabel={`${Math.round(progress * 100)}% answered`}>
