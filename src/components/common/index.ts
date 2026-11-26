@@ -1,6 +1,7 @@
 // Common UI components - built on React Native Paper, styled by our theme.
 // Screens build UI only from these: never import react-native-paper (or raw
 // Text/TextInput/Pressable) in screens. Add variants here instead of one-off styling.
+export { AccordionItem } from './Accordion';
 export { InlineAlert } from './Alert';
 export { AppText, type AppTextProps } from './AppText';
 export { AttachmentList, type AttachmentItem } from './AttachmentList';

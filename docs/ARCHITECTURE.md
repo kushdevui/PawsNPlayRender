@@ -127,6 +127,7 @@ flowchart LR
 app/                         Expo Router routes
   _layout.tsx                ThemeProvider, QueryClient, session bootstrap
   index.tsx                  redirect to /login or role home
+  faqs.tsx                   PUBLIC FAQ page (/faqs) - no RoleGate, works logged out (phone + web)
   (auth)/login, register
   admin/
     _layout.tsx              RoleGate(admin) + Stack
@@ -140,7 +141,7 @@ src/
   auth/                      session store, token storage, RoleGate, roles, permissions
   components/common/         UI kit (see 4.3)
   components/navigation/     tab/stack options, tab icons
-  features/                  bookings/, dogs/, dashboard/ (calendar, day sheet), payments/, settings/ - hooks + feature components
+  features/                  bookings/, dogs/, dashboard/ (calendar, day sheet), payments/, settings/, faqs/ (public FAQ content) - hooks + feature components
   theme/                     palette -> themes -> paperTheme, ThemeProvider, makeStyles
   utils/                     date.ts (local date/time helpers), format.ts
 mock/                        endpoints.json + data/ (users, dogs, bookings, settings)
@@ -154,7 +155,7 @@ theme generated from the tokens). Screens use `makeStyles((t) => ...)` / `useThe
 Contrast rule: pink fills carry black text; pink text on white uses `colors.primaryText`.
 
 ### 4.3 Common components (`src/components/common`)
-AppText, Button, TextInput, NumberStepper, PickerField, DateField, TimeField, Calendar, SelectField, SelectSheet, Chip,
+AccordionItem, AppText, Button, TextInput, NumberStepper, PickerField, DateField, TimeField, Calendar, SelectField, SelectSheet, Chip,
 SegmentedControl, SwitchField, SearchBar, Card, Badge, Avatar, InfoRow, SectionHeader, Divider,
 InlineAlert, ProgressBar, MonthSwitcher, Sheet, Fab, Icon, Logo, Screen, StateView.
 Screens never import Paper directly. Date/time pickers are pure JS (work in Expo Go).
@@ -277,6 +278,7 @@ Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ d
 ## 9. Screens (Phase 1)
 | Screen | Route | Purpose |
 |---|---|---|
+| FAQs (public) | `/faqs` | no login needed (phone + web, served at pawsnplaywithme.com/faqs): quick facts, search, topic chips, collapsible questions; links to `/know-your-dog` |
 | Login | `/login` | email/password, admin quick-fill in mock mode |
 | Dashboard | `/admin` | capacity (edit), payments due, dog lookup, occupancy calendar, arrivals/departures/upcoming |
 | Bookings | `/admin/bookings` | month switcher, dog filter (all-time history), date filter, status chips, + New booking |

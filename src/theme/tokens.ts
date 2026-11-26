@@ -56,6 +56,10 @@ export const sizes = {
   iconLg: 24,
   borderWidth: 1,
   focusBorderWidth: 1.5,
+  logoSm: 44, // header logo height
+  logoLg: 140, // hero logo height
+  contentMaxWidth: 860, // max content width on wide screens (web/desktop)
+  breakpointWide: 640, // window width from which layouts switch to their wide variant
 } as const;
 
 export type Spacing = keyof typeof spacing;
