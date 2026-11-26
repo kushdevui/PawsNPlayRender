@@ -2,6 +2,7 @@
 // never axios directly. Same code works with mocks and with the real backend.
 // Responses pass through ../normalize so a server shape that differs from the contract
 // never crashes a screen (missing fields get defaults + a dev warning).
+import { appendFile, multipartConfig, type LocalFile } from '@/lib/attachments';
 import { api } from '../client';
 import {
   normalizeAuth, normalizeBilling, normalizeBooking, normalizeDashboard, normalizeDog, normalizeOccupancy, normalizeSettings,
@@ -9,7 +10,8 @@ import {
 } from '../normalize';
 import type {
   ApiList, AuthResponse, BillingSummary, Booking, BookingFilters, BookingInput, BookingStatus, PaymentInput,
-  DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, OccupancyCalendar, Role, User, UserStatus,
+  DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, OccupancyCalendar, QuestionnaireAnswers,
+  QuestionnaireReceipt, Role, User, UserStatus,
 } from '../types';
 
 /** Unwrap `{ data }` (or a bare object, if the server skips the envelope). */
@@ -74,4 +76,15 @@ export const adminApi = {
   /** Per-day occupancy for local dates [from, to), 'YYYY-MM-DD'. */
   occupancy: (from: string, to: string) =>
     item<OccupancyCalendar>(api.get('/admin/occupancy', { params: { from, to } }), normalizeOccupancy),
+};
+
+/** Public "Know Your Dog" form (no login). Multipart: `answers` (JSON string), `website` (honeypot), `documents` files. */
+export const questionnairesApi = {
+  submit: async (answers: QuestionnaireAnswers, files: LocalFile[], website = '') => {
+    const form = new FormData();
+    form.append('answers', JSON.stringify(answers));
+    form.append('website', website);
+    for (const file of files) await appendFile(form, 'documents', file);
+    return item<QuestionnaireReceipt>(api.post('/questionnaires', form, multipartConfig()));
+  },
 };

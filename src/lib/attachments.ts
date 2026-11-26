@@ -1,6 +1,7 @@
 // Picking, "uploading" and opening attachments (vaccination cards etc.).
 // All Expo modules used here work in Expo Go.
 import { Linking, Platform } from 'react-native';
+import type { AxiosRequestConfig } from 'axios';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
@@ -64,6 +65,26 @@ export async function pickDocument(): Promise<LocalFile | null> {
   return checkSize({ uri: a.uri, name: a.name, mimeType: a.mimeType ?? guessMime(a.name), size: a.size ?? null });
 }
 
+/** Add a picked file to multipart FormData under `field`, on web and native. */
+export async function appendFile(form: FormData, field: string, file: LocalFile) {
+  if (Platform.OS === 'web') {
+    // Browser: the picker gives a blob:/data: URI - send the real bytes.
+    const blob = await (await fetch(file.uri)).blob();
+    form.append(field, new File([blob], file.name, { type: file.mimeType }));
+  } else {
+    // React Native's FormData accepts { uri, name, type } for files.
+    form.append(field, { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
+  }
+}
+
+/** Axios options for posting FormData through `api` (its default Content-Type is JSON). */
+export const multipartConfig = (): AxiosRequestConfig => ({
+  // Browsers must set the multipart boundary themselves.
+  headers: Platform.OS === 'web' ? { 'Content-Type': undefined } : { 'Content-Type': 'multipart/form-data' },
+  transformRequest: (data) => data, // keep FormData as-is
+  timeout: 60_000,
+});
+
 /**
  * Turn a picked local file into a stored document.
  * Mock mode keeps the local URI (only on this device). Real API: multipart POST /uploads,
@@ -74,21 +95,8 @@ export async function uploadAttachment(file: LocalFile, kind: DogDocument['kind'
   let size = file.size;
   if (!USE_MOCKS) {
     const form = new FormData();
-    const isWeb = Platform.OS === 'web';
-    if (isWeb) {
-      // Browser: the picker gives a blob:/data: URI - send the real bytes.
-      const blob = await (await fetch(file.uri)).blob();
-      form.append('file', new File([blob], file.name, { type: file.mimeType }));
-    } else {
-      // React Native's FormData accepts { uri, name, type } for files.
-      form.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
-    }
-    const res = await api.post('/uploads', form, {
-      // Browsers must set the multipart boundary themselves.
-      headers: isWeb ? { 'Content-Type': undefined } : { 'Content-Type': 'multipart/form-data' },
-      transformRequest: (data) => data, // keep FormData as-is
-      timeout: 60_000,
-    });
+    await appendFile(form, 'file', file);
+    const res = await api.post('/uploads', form, multipartConfig());
     const uploaded = res.data?.data ?? res.data;
     if (!uploaded?.url) throw new Error('Upload failed - the server did not return a file URL.');
     uri = uploaded.url;

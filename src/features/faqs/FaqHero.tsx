@@ -1,25 +1,7 @@
 import { View } from 'react-native';
-import { router } from 'expo-router';
-import { AppText, Button, Logo } from '@/components/common';
+import { AppText, Logo } from '@/components/common';
 import { makeStyles, useTheme } from '@/theme';
 import { quickFacts } from './faqData';
-
-/** Top bar of the public pages: logo + name, and a way in for the team. */
-export function FaqHeader() {
-  const theme = useTheme();
-  const styles = useStyles();
-  return (
-    <View style={styles.bar}>
-      <View style={styles.inner}>
-        <View style={styles.brand}>
-          <Logo size={theme.sizes.logoSm} />
-          <AppText variant="heading">Paws N&apos; Play</AppText>
-        </View>
-        <Button title="Team login" variant="outline" size="sm" onPress={() => router.push('/login')} />
-      </View>
-    </View>
-  );
-}
 
 /** Hero: big logo, headline, intro and the quick-facts grid. */
 export function FaqHero({ wide }: { wide: boolean }) {
@@ -47,23 +29,6 @@ export function FaqHero({ wide }: { wide: boolean }) {
 }
 
 const useStyles = makeStyles((t) => ({
-  bar: {
-    backgroundColor: t.colors.background,
-    borderBottomWidth: t.sizes.borderWidth,
-    borderBottomColor: t.colors.border,
-    alignItems: 'center',
-  },
-  inner: {
-    width: '100%',
-    maxWidth: t.sizes.contentMaxWidth,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: t.spacing.md,
-    paddingHorizontal: t.spacing.lg,
-    paddingVertical: t.spacing.sm,
-  },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, flexShrink: 1 },
   hero: { alignItems: 'center', gap: t.spacing.md, paddingTop: t.spacing.xxl },
   intro: { maxWidth: t.sizes.contentMaxWidth * 0.65 },
   facts: {

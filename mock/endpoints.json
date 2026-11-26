@@ -390,6 +390,31 @@
       "response": {
         "data": "DashboardStats: capacity, occupiedNow, availableNow, todayCheckIns, todayCheckOuts, upcoming (7 days), occupancyNext7Days, activeDogs, bookingsThisMonth, paymentsDue, paymentsDueBookings"
       }
+    },
+    {
+      "group": "questionnaires",
+      "method": "POST",
+      "path": "/questionnaires",
+      "roles": [
+        "public"
+      ],
+      "contentType": "multipart/form-data",
+      "body": {
+        "answers": "JSON string of the flat answers object (BACKEND_API_SPEC §7.12)",
+        "website": "honeypot - empty for real users",
+        "documents": "0-5 files, image/* or application/pdf, max 10 MB each"
+      },
+      "response": {
+        "data": {
+          "id": "string",
+          "createdAt": "ISO"
+        }
+      },
+      "errors": [
+        "VALIDATION_ERROR",
+        "RATE_LIMITED"
+      ],
+      "note": "Mock acknowledges only (201), nothing is stored."
     }
   ]
 }

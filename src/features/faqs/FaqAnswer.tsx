@@ -20,7 +20,7 @@ function RichText({ source }: { source: string }) {
               color="primaryText"
               style={styles.link}
               accessibilityRole="link"
-              // Cast: typed routes only know routes that exist; /know-your-dog is being built separately.
+              // Cast: the href is parsed from the FAQ text (a plain string), e.g. /know-your-dog or /faqs.
               onPress={() => router.push(seg.href as Href)}
             >
               {seg.text}

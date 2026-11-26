@@ -128,6 +128,7 @@ app/                         Expo Router routes
   _layout.tsx                ThemeProvider, QueryClient, session bootstrap
   index.tsx                  redirect to /login or role home
   faqs.tsx                   PUBLIC FAQ page (/faqs) - no RoleGate, works logged out (phone + web)
+  know-your-dog.tsx          PUBLIC "Know Your Dog" questionnaire (/know-your-dog) - no RoleGate, posts to POST /questionnaires
   (auth)/login, register
   admin/
     _layout.tsx              RoleGate(admin) + Stack
@@ -141,7 +142,7 @@ src/
   auth/                      session store, token storage, RoleGate, roles, permissions
   components/common/         UI kit (see 4.3)
   components/navigation/     tab/stack options, tab icons
-  features/                  bookings/, dogs/, dashboard/ (calendar, day sheet), payments/, settings/, faqs/ (public FAQ content) - hooks + feature components
+  features/                  bookings/, dogs/, dashboard/ (calendar, day sheet), payments/, settings/, faqs/ (public FAQ content), knowYourDog/ (public questionnaire: fields as data, logic, form pieces), public/ (shared public header) - hooks + feature components
   theme/                     palette -> themes -> paperTheme, ThemeProvider, makeStyles
   utils/                     date.ts (local date/time helpers), format.ts
 mock/                        endpoints.json + data/ (users, dogs, bookings, settings)
@@ -156,7 +157,7 @@ Contrast rule: pink fills carry black text; pink text on white uses `colors.prim
 
 ### 4.3 Common components (`src/components/common`)
 AccordionItem, AppText, Button, TextInput, NumberStepper, PickerField, DateField, TimeField, Calendar, SelectField, SelectSheet, Chip,
-SegmentedControl, SwitchField, SearchBar, Card, Badge, Avatar, InfoRow, SectionHeader, Divider,
+SegmentedControl, SwitchField, CheckboxField, SearchBar, Card, Badge, Avatar, InfoRow, SectionHeader, Divider,
 InlineAlert, ProgressBar, MonthSwitcher, Sheet, Fab, Icon, Logo, Screen, StateView.
 Screens never import Paper directly. Date/time pickers are pure JS (work in Expo Go).
 
@@ -279,6 +280,7 @@ Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ d
 | Screen | Route | Purpose |
 |---|---|---|
 | FAQs (public) | `/faqs` | no login needed (phone + web, served at pawsnplaywithme.com/faqs): quick facts, search, topic chips, collapsible questions; links to `/know-your-dog` |
+| Know Your Dog (public) | `/know-your-dog` | no login needed (phone + web, pawsnplaywithme.com/know-your-dog): 8-section questionnaire per dog (owner + emergency contact, dog, health + record files, food, with dogs/people, triggers, routine/extras, confirm), progress bar, inline errors; `POST /questionnaires` (multipart); thank-you view |
 | Login | `/login` | email/password, admin quick-fill in mock mode |
 | Dashboard | `/admin` | capacity (edit), payments due, dog lookup, occupancy calendar, arrivals/departures/upcoming |
 | Bookings | `/admin/bookings` | month switcher, dog filter (all-time history), date filter, status chips, + New booking |

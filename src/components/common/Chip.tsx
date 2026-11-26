@@ -9,12 +9,25 @@ interface Props {
   icon?: IconName;
   /** Shows an × to clear (e.g. an active date filter). */
   onClose?: () => void;
+  /** Fill when selected: black (default), or green / red / pink for answer scales like Fine / Not okay / Unsure. */
+  selectedTone?: ChipTone;
+  /** Screen-reader label when the visible label needs context (e.g. "Men: Fine"). Defaults to `label`. */
+  accessibilityLabel?: string;
 }
 
+export type ChipTone = 'default' | 'success' | 'danger' | 'accent';
+
 /** Filter / choice chip (Paper Chip). Selected = black fill, white text. */
-export function Chip({ label, selected = false, onPress, icon, onClose }: Props) {
+export function Chip({ label, selected = false, onPress, icon, onClose, selectedTone = 'default', accessibilityLabel }: Props) {
   const theme = useTheme();
   const styles = useStyles();
+  const fill = {
+    default: theme.colors.secondary,
+    success: theme.colors.success,
+    danger: theme.colors.danger,
+    accent: theme.colors.primaryText,
+  }[selectedTone];
+  const onFill = selectedTone === 'default' ? theme.colors.onSecondary : theme.colors.textInverse;
   return (
     <PaperChip
       mode="outlined"
@@ -24,10 +37,11 @@ export function Chip({ label, selected = false, onPress, icon, onClose }: Props)
       onClose={onClose}
       icon={icon}
       compact
-      style={[styles.chip, selected && { backgroundColor: theme.colors.secondary, borderColor: theme.colors.secondary }]}
-      textStyle={[styles.text, { color: selected ? theme.colors.onSecondary : theme.colors.text }]}
-      selectedColor={selected ? theme.colors.onSecondary : theme.colors.text}
+      style={[styles.chip, selected && { backgroundColor: fill, borderColor: fill }]}
+      textStyle={[styles.text, { color: selected ? onFill : theme.colors.text }]}
+      selectedColor={selected ? onFill : theme.colors.text}
       accessibilityState={{ selected }}
+      accessibilityLabel={accessibilityLabel ?? label}
     >
       {label}
     </PaperChip>

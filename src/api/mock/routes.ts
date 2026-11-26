@@ -487,6 +487,8 @@ const routes: Array<[string, string, Handler]> = [
       })(),
     });
   }],
+  // Public "Know Your Dog" form (multipart). The mock only acknowledges it: answers and files are not stored.
+  ['POST', '/questionnaires', () => ok({ id: newId('q'), createdAt: nowIso() }, 201)],
 ];
 
 // ---------- matcher ----------

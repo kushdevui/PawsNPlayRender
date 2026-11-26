@@ -5,9 +5,10 @@ import { ScrollView, View, useWindowDimensions, type LayoutChangeEvent } from 'r
 import { Stack } from 'expo-router';
 import { AccordionItem, AppText, Chip, Screen, SearchBar } from '@/components/common';
 import { FaqAnswer } from '@/features/faqs/FaqAnswer';
-import { FaqHeader, FaqHero } from '@/features/faqs/FaqHeader';
+import { FaqHero } from '@/features/faqs/FaqHero';
 import { faqSections } from '@/features/faqs/faqData';
 import { filterSections } from '@/features/faqs/faqText';
+import { PublicHeader } from '@/features/public/PublicHeader';
 import { useDocumentTitle } from '@/lib/documentTitle';
 import { makeStyles, useTheme } from '@/theme';
 
@@ -70,7 +71,7 @@ export default function FaqsScreen() {
   return (
     <Screen style={styles.screen}>
       <Stack.Screen options={{ title: TITLE }} />
-      <FaqHeader />
+      <PublicHeader />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.column} onLayout={(e) => {
           columnY.current = e.nativeEvent.layout.y;

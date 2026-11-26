@@ -221,6 +221,15 @@ export interface AuthResponse {
   user: User;
 }
 
+// ---------- Questionnaires ("Know Your Dog", BACKEND_API_SPEC §7.12) ----------
+/** Flat answers object: text / yes-no / 'YYYY-MM-DD' strings, plus `confirmTrue: true`. Empty answers are omitted. */
+export type QuestionnaireAnswers = Record<string, string | boolean>;
+
+export interface QuestionnaireReceipt {
+  id: string;
+  createdAt: string;
+}
+
 // ---------- Envelopes ----------
 export interface ApiItem<T> {
   data: T;
