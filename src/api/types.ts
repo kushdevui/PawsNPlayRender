@@ -230,6 +230,57 @@ export interface QuestionnaireReceipt {
   createdAt: string;
 }
 
+/** new = not looked at yet, reviewed = read by the team, archived = done / spam. */
+export type QuestionnaireStatus = 'new' | 'reviewed' | 'archived';
+
+/** A record file the dog parent attached (vaccination / deworming). */
+export interface QuestionnaireDocument {
+  id: string;
+  name: string;
+  uri: string; // URL from the uploads provider
+  mimeType: string;
+  size: number | null; // bytes
+  uploadedAt: string;
+}
+
+/** Row in GET /questionnaires (newest first). */
+export interface QuestionnaireListItem {
+  id: string;
+  status: QuestionnaireStatus;
+  createdAt: string;
+  dogName: string;
+  breed: string;
+  ownerName: string;
+  ownerPhone: string;
+  documentsCount: number;
+}
+
+/** GET /questionnaires/:id */
+export interface Questionnaire {
+  id: string;
+  status: QuestionnaireStatus;
+  answers: QuestionnaireAnswers;
+  documents: QuestionnaireDocument[];
+  /** Dog profile this submission is linked to (admin sets it). */
+  dogId: string | null;
+  reviewedBy: string | null; // user id
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuestionnaireFilters {
+  status?: QuestionnaireStatus;
+  /** Dog name, owner name or owner phone (substring, case-insensitive). */
+  search?: string;
+}
+
+/** PATCH /questionnaires/:id (admin). dogId null unlinks. */
+export interface QuestionnaireUpdate {
+  status?: QuestionnaireStatus;
+  dogId?: string | null;
+}
+
 // ---------- Envelopes ----------
 export interface ApiItem<T> {
   data: T;

@@ -594,8 +594,8 @@ The app then saves `{ kind, name, uri: url, mimeType, size, uploadedAt }` into `
 
 ### 7.12 Questionnaires ("Know Your Dog")
 
-> The form screen lives in the app (public route `/know-your-dog`, no login) and posts here. Admins and staff read
-> submissions through the API (or Postman) until an admin screen is built.
+> The form screen lives in the app (public route `/know-your-dog`, no login) and posts here. Admins read and review
+> submissions in the app at `/admin/forms` (list) and `/admin/forms/[id]` (detail: status, link / create dog).
 
 #### `POST /questionnaires` - public (no auth) · `multipart/form-data`
 | Field | Content |

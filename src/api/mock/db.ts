@@ -3,7 +3,8 @@ import usersJson from '../../../mock/data/users.json';
 import dogsJson from '../../../mock/data/dogs.json';
 import bookingsJson from '../../../mock/data/bookings.json';
 import settingsJson from '../../../mock/data/settings.json';
-import type { Booking, Dog, FacilitySettings, User } from '../types';
+import questionnairesJson from '../../../mock/data/questionnaires.json';
+import type { Booking, Dog, FacilitySettings, Questionnaire, User } from '../types';
 
 export type MockUser = User & { password: string };
 /** Stored booking = API booking without the joined `dog` summary and derived payment totals. */
@@ -16,6 +17,7 @@ export const db = {
   dogs: clone<Dog[]>(dogsJson),
   bookings: clone<StoredBooking[]>(bookingsJson),
   settings: clone<FacilitySettings>(settingsJson),
+  questionnaires: clone<Questionnaire[]>(questionnairesJson),
 };
 
 export const resetDb = () => {
@@ -23,6 +25,7 @@ export const resetDb = () => {
   db.dogs = clone(dogsJson);
   db.bookings = clone(bookingsJson);
   db.settings = clone(settingsJson);
+  db.questionnaires = clone(questionnairesJson);
 };
 
 let seq = 1000;

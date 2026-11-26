@@ -1,7 +1,10 @@
 // Make API responses safe to render even when the server's shape differs from the contract
 // (docs/BACKEND_API_SPEC.md). Missing fields get safe defaults instead of crashing screens,
 // and in development we warn once per field so the backend can be aligned.
-import type { AuthResponse, BillingSummary, Booking, DashboardStats, Dog, FacilitySettings, OccupancyCalendar, PaymentStatus, User } from './types';
+import type {
+  AuthResponse, BillingSummary, Booking, DashboardStats, Dog, FacilitySettings, OccupancyCalendar, PaymentStatus, Questionnaire,
+  QuestionnaireAnswers, QuestionnaireListItem, QuestionnaireStatus, User,
+} from './types';
 
 const warned = new Set<string>();
 const warnMissing = (where: string, obj: unknown, fields: string[]) => {
@@ -181,6 +184,52 @@ export function normalizeUser(raw: any): User {
     avatarUrl: raw?.avatarUrl ?? null,
     status: raw?.status === 'inactive' ? 'inactive' : 'active',
     createdAt: str(raw?.createdAt),
+  };
+}
+
+const questionnaireStatus = (v: unknown): QuestionnaireStatus => (v === 'reviewed' || v === 'archived' ? v : 'new');
+
+export function normalizeQuestionnaireListItem(raw: any): QuestionnaireListItem {
+  warnMissing('QuestionnaireListItem', raw, ['id', 'status', 'createdAt', 'dogName', 'ownerName', 'ownerPhone']);
+  return {
+    id: idOf(raw),
+    status: questionnaireStatus(raw?.status),
+    createdAt: str(raw?.createdAt),
+    dogName: str(raw?.dogName, 'Dog'),
+    breed: str(raw?.breed),
+    ownerName: str(raw?.ownerName),
+    ownerPhone: str(raw?.ownerPhone),
+    documentsCount: num(raw?.documentsCount),
+  };
+}
+
+export function normalizeQuestionnaire(raw: any): Questionnaire {
+  warnMissing('Questionnaire', raw, ['id', 'status', 'answers', 'documents', 'createdAt']);
+  // Keep only flat string / boolean answers - anything else can't be rendered safely.
+  const answers: QuestionnaireAnswers = {};
+  if (raw?.answers && typeof raw.answers === 'object') {
+    for (const [k, v] of Object.entries(raw.answers as Record<string, unknown>)) {
+      if (typeof v === 'string' || typeof v === 'boolean') answers[k] = v;
+      else if (typeof v === 'number') answers[k] = String(v);
+    }
+  }
+  return {
+    id: idOf(raw),
+    status: questionnaireStatus(raw?.status),
+    answers,
+    documents: arr<any>(raw?.documents).map((d) => ({
+      id: idOf(d),
+      name: str(d?.name, 'File'),
+      uri: str(d?.uri ?? d?.url),
+      mimeType: str(d?.mimeType, 'application/octet-stream'),
+      size: d?.size == null ? null : num(d.size),
+      uploadedAt: str(d?.uploadedAt),
+    })),
+    dogId: raw?.dogId ? (typeof raw.dogId === 'object' ? idOf(raw.dogId) : str(raw.dogId)) : null,
+    reviewedBy: raw?.reviewedBy ? (typeof raw.reviewedBy === 'object' ? idOf(raw.reviewedBy) : str(raw.reviewedBy)) : null,
+    reviewedAt: raw?.reviewedAt ?? null,
+    createdAt: str(raw?.createdAt),
+    updatedAt: str(raw?.updatedAt),
   };
 }
 

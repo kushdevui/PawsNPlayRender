@@ -4,12 +4,13 @@ import { RefreshControl, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import type { Booking } from '@/api/types';
 import { useSession } from '@/auth/session';
-import { AppText, Button, Card, PickerField, ProgressBar, Screen, SectionHeader, SelectSheet, StateView } from '@/components/common';
+import { AppText, Badge, Button, Card, Icon, PickerField, ProgressBar, Screen, SectionHeader, SelectSheet, StateView } from '@/components/common';
 import { BookingCard } from '@/features/bookings/BookingCard';
 import { useSetBookingStatus } from '@/features/bookings/hooks';
 import { OccupancyCalendar } from '@/features/dashboard/OccupancyCalendar';
 import { useDashboard } from '@/features/dashboard/hooks';
 import { useDogOptions } from '@/features/dogs/hooks';
+import { useNewQuestionnairesCount } from '@/features/questionnaires/hooks';
 import { CapacitySheet } from '@/features/settings/CapacitySheet';
 import { makeStyles } from '@/theme';
 import { formatDate } from '@/utils/date';
@@ -24,6 +25,7 @@ export default function AdminDashboard() {
   const { data, isLoading, error, refetch, isRefetching } = useDashboard();
   const setStatus = useSetBookingStatus();
   const dogOptions = useDogOptions(true);
+  const newForms = useNewQuestionnairesCount();
   const [editingCapacity, setEditingCapacity] = useState(false);
   const [findingDog, setFindingDog] = useState(false);
 
@@ -47,7 +49,15 @@ export default function AdminDashboard() {
     <Screen edges={['top']} style={styles.noPad}>
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={() => {
+              void refetch();
+              void newForms.refetch();
+            }}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
         <View>
@@ -93,6 +103,22 @@ export default function AdminDashboard() {
               <AppText variant="caption">{plural(data.paymentsDueBookings, 'booking')} · tap for billing</AppText>
             </View>
             <AppText variant="subheading">{formatPrice(data.paymentsDue)}</AppText>
+          </View>
+        </Card>
+
+        {/* Know Your Dog submissions from dog parents */}
+        <Card onPress={() => router.push('/admin/forms')} accessibilityLabel="Know Your Dog forms">
+          <View style={styles.between}>
+            <View style={styles.formsTitle}>
+              <Icon name="clipboard-text-outline" color="textMuted" />
+              <View style={styles.flex}>
+                <AppText variant="label" color="textMuted">KNOW YOUR DOG FORMS</AppText>
+                <AppText variant="caption">
+                  {newForms.isLoading ? 'Checking for new forms…' : newForms.error ? 'Could not load · tap to open' : newForms.count ? 'New answers from dog parents · tap to review' : 'All reviewed · tap to see forms'}
+                </AppText>
+              </View>
+            </View>
+            {!!newForms.count && <Badge label={`${newForms.count} new`} tone="brand" />}
           </View>
         </Card>
 
@@ -169,4 +195,5 @@ const useStyles = makeStyles((t) => ({
   stat: { flex: 1 },
   actions: { flexDirection: 'row', gap: t.spacing.md },
   flex: { flex: 1 },
+  formsTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: t.spacing.md },
 }));

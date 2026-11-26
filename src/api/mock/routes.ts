@@ -1,7 +1,7 @@
 // Mock route handlers for the boarding admin. Mirrors mock/endpoints.json and docs/ARCHITECTURE.md.
 // No axios here, so it is easy to unit test. The Node backend should implement the same rules.
 import { db, newId, publicUser, type MockUser, type StoredBooking } from './db';
-import type { Booking, BookingStatus, Dog, PaymentStatus, Role } from '../types';
+import type { Booking, BookingStatus, Dog, PaymentStatus, Questionnaire, QuestionnaireStatus, Role } from '../types';
 
 export interface MockRequest {
   method: string;
@@ -181,6 +181,13 @@ const ALLOWED_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
   checked_out: [],
   cancelled: [],
 };
+
+const QUESTIONNAIRE_STATUSES: QuestionnaireStatus[] = ['new', 'reviewed', 'archived'];
+const answer = (q: Questionnaire, key: string) => (typeof q.answers[key] === 'string' ? (q.answers[key] as string) : '');
+const questionnaireListItem = (q: Questionnaire) => ({
+  id: q.id, status: q.status, createdAt: q.createdAt, dogName: answer(q, 'dogName'), breed: answer(q, 'breed'),
+  ownerName: answer(q, 'ownerName'), ownerPhone: answer(q, 'ownerPhone'), documentsCount: q.documents.length,
+});
 
 // ---------- routes ----------
 const STAFF: Role[] = ['admin', 'staff'];
@@ -487,8 +494,35 @@ const routes: Array<[string, string, Handler]> = [
       })(),
     });
   }],
-  // Public "Know Your Dog" form (multipart). The mock only acknowledges it: answers and files are not stored.
+  // "Know Your Dog" (BACKEND_API_SPEC §7.12). Public submit: the mock can't read multipart, so it only acknowledges.
   ['POST', '/questionnaires', () => ok({ id: newId('q'), createdAt: nowIso() }, 201)],
+  ['GET', '/questionnaires', (ctx) => {
+    requireUser(ctx, STAFF);
+    const { status } = ctx.query;
+    const s = ctx.query.search?.trim().toLowerCase();
+    const items = db.questionnaires
+      .filter((q) => !status || q.status === status)
+      .map(questionnaireListItem)
+      .filter((q) => !s || [q.dogName, q.ownerName, q.ownerPhone].some((v) => v.toLowerCase().includes(s)))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return list(items, ctx.query);
+  }],
+  ['GET', '/questionnaires/:id', (ctx) => (requireUser(ctx, STAFF), ok(findOr404(db.questionnaires, ctx.params.id, 'Questionnaire')))],
+  ['PATCH', '/questionnaires/:id', (ctx) => {
+    const user = requireUser(ctx, ['admin']);
+    const q = findOr404(db.questionnaires, ctx.params.id, 'Questionnaire');
+    const { status, dogId } = ctx.body ?? {};
+    if (status !== undefined && !QUESTIONNAIRE_STATUSES.includes(status)) fail(422, 'VALIDATION_ERROR', 'Invalid status.');
+    if (dogId !== undefined && dogId !== null && !db.dogs.some((d) => d.id === dogId)) fail(422, 'VALIDATION_ERROR', 'Choose an existing dog.');
+    if (status !== undefined && status !== q.status) {
+      // Leaving `new` records who reviewed it; going back to `new` clears that.
+      Object.assign(q, status === 'new' ? { reviewedBy: null, reviewedAt: null } : q.status === 'new' ? { reviewedBy: user.id, reviewedAt: nowIso() } : {});
+      q.status = status;
+    }
+    if (dogId !== undefined) q.dogId = dogId;
+    q.updatedAt = nowIso();
+    return ok(q);
+  }],
 ];
 
 // ---------- matcher ----------

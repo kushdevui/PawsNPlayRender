@@ -13,6 +13,7 @@ mock/
     dogs.json           # 12 dogs with owner + care info
     bookings.json       # boarding stays around Nov-Dec 2026 (some checked in "now")
     settings.json       # capacity (15), default check-in/out times, price per night
+    questionnaires.json # 2 sample Know Your Dog submissions (POST /questionnaires is acknowledged, not stored)
 ```
 
 ## Switching mock <-> real API

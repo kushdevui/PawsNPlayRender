@@ -9,7 +9,8 @@ import { genderOptions, temperamentOptions } from './options';
 import { VaccinationDocs } from './VaccinationDocs';
 
 interface Props {
-  initial?: Dog;
+  /** Full dog when editing; partial values to prefill a new dog (e.g. from a Know Your Dog form). */
+  initial?: Partial<Dog>;
   submitLabel: string;
   submitting?: boolean;
   onSubmit: (input: DogInput) => Promise<unknown>;

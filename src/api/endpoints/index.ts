@@ -5,13 +5,13 @@
 import { appendFile, multipartConfig, type LocalFile } from '@/lib/attachments';
 import { api } from '../client';
 import {
-  normalizeAuth, normalizeBilling, normalizeBooking, normalizeDashboard, normalizeDog, normalizeOccupancy, normalizeSettings,
-  normalizeUser,
+  normalizeAuth, normalizeBilling, normalizeBooking, normalizeDashboard, normalizeDog, normalizeOccupancy, normalizeQuestionnaire,
+  normalizeQuestionnaireListItem, normalizeSettings, normalizeUser,
 } from '../normalize';
 import type {
   ApiList, AuthResponse, BillingSummary, Booking, BookingFilters, BookingInput, BookingStatus, PaymentInput,
-  DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, OccupancyCalendar, QuestionnaireAnswers,
-  QuestionnaireReceipt, Role, User, UserStatus,
+  DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, OccupancyCalendar, Questionnaire, QuestionnaireAnswers,
+  QuestionnaireFilters, QuestionnaireListItem, QuestionnaireReceipt, QuestionnaireUpdate, Role, User, UserStatus,
 } from '../types';
 
 /** Unwrap `{ data }` (or a bare object, if the server skips the envelope). */
@@ -78,8 +78,16 @@ export const adminApi = {
     item<OccupancyCalendar>(api.get('/admin/occupancy', { params: { from, to } }), normalizeOccupancy),
 };
 
-/** Public "Know Your Dog" form (no login). Multipart: `answers` (JSON string), `website` (honeypot), `documents` files. */
+/**
+ * "Know Your Dog" questionnaires (BACKEND_API_SPEC §7.12).
+ * submit: public form (no login), multipart `answers` (JSON string), `website` (honeypot), `documents` files.
+ * list / get: admin + staff. update (status, linked dog): admin.
+ */
 export const questionnairesApi = {
+  list: (params?: ListParams & QuestionnaireFilters) =>
+    list<QuestionnaireListItem>(api.get('/questionnaires', { params }), normalizeQuestionnaireListItem),
+  get: (id: string) => item<Questionnaire>(api.get(`/questionnaires/${id}`), normalizeQuestionnaire),
+  update: (id: string, body: QuestionnaireUpdate) => item<Questionnaire>(api.patch(`/questionnaires/${id}`, body), normalizeQuestionnaire),
   submit: async (answers: QuestionnaireAnswers, files: LocalFile[], website = '') => {
     const form = new FormData();
     form.append('answers', JSON.stringify(answers));

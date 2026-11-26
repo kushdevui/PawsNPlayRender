@@ -414,7 +414,62 @@
         "VALIDATION_ERROR",
         "RATE_LIMITED"
       ],
-      "note": "Mock acknowledges only (201), nothing is stored."
+      "note": "Mock acknowledges only (201): it can't read multipart, so nothing is stored. Sample submissions live in mock/data/questionnaires.json."
+    },
+    {
+      "group": "questionnaires",
+      "method": "GET",
+      "path": "/questionnaires",
+      "roles": [
+        "admin",
+        "staff"
+      ],
+      "query": {
+        "status": "new | reviewed | archived (omit = all)",
+        "search": "dog name, owner name or owner phone",
+        "page": "int",
+        "limit": "int"
+      },
+      "response": {
+        "data": "[{ id, status, createdAt, dogName, breed, ownerName, ownerPhone, documentsCount }] newest first",
+        "meta": "{ total, page, limit }"
+      },
+      "source": "data/questionnaires.json"
+    },
+    {
+      "group": "questionnaires",
+      "method": "GET",
+      "path": "/questionnaires/:id",
+      "roles": [
+        "admin",
+        "staff"
+      ],
+      "response": {
+        "data": "Questionnaire: id, status, answers (flat key -> string | boolean), documents [{ id, name, uri, mimeType, size, uploadedAt }], dogId, reviewedBy, reviewedAt, createdAt, updatedAt"
+      },
+      "errors": [
+        "NOT_FOUND"
+      ]
+    },
+    {
+      "group": "questionnaires",
+      "method": "PATCH",
+      "path": "/questionnaires/:id",
+      "roles": [
+        "admin"
+      ],
+      "body": {
+        "status": "new | reviewed | archived (optional)",
+        "dogId": "existing dog id or null to unlink (optional)"
+      },
+      "response": {
+        "data": "Questionnaire"
+      },
+      "errors": [
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
+      "note": "Leaving new sets reviewedBy/reviewedAt; back to new clears them."
     }
   ]
 }

@@ -136,16 +136,17 @@ app/                         Expo Router routes
     booking/new, booking/[id]
     dog/new, dog/[id]
     settings                 boarding settings
+    forms/index, forms/[id]  Know Your Dog submissions (list + detail; opened from the dashboard card)
   user/, staff/              placeholders (Phase 2+)
 src/
   api/                       client.ts, types.ts, endpoints/, mock/ (adapter, routes, db)
   auth/                      session store, token storage, RoleGate, roles, permissions
   components/common/         UI kit (see 4.3)
   components/navigation/     tab/stack options, tab icons
-  features/                  bookings/, dogs/, dashboard/ (calendar, day sheet), payments/, settings/, faqs/ (public FAQ content), knowYourDog/ (public questionnaire: fields as data, logic, form pieces), public/ (shared public header) - hooks + feature components
+  features/                  bookings/, dogs/, dashboard/ (calendar, day sheet), payments/, settings/, faqs/ (public FAQ content), knowYourDog/ (public questionnaire: fields as data, logic, form pieces), questionnaires/ (admin view of submissions: hooks, answer grouping from kydData, cards, actions), public/ (shared public header) - hooks + feature components
   theme/                     palette -> themes -> paperTheme, ThemeProvider, makeStyles
   utils/                     date.ts (local date/time helpers), format.ts
-mock/                        endpoints.json + data/ (users, dogs, bookings, settings)
+mock/                        endpoints.json + data/ (users, dogs, bookings, settings, questionnaires)
 docs/                        ARCHITECTURE.md (this), api-contract.md
 ```
 
@@ -282,14 +283,16 @@ Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ d
 | FAQs (public) | `/faqs` | no login needed (phone + web, served at pawsnplaywithme.com/faqs): quick facts, search, topic chips, collapsible questions; links to `/know-your-dog` |
 | Know Your Dog (public) | `/know-your-dog` | no login needed (phone + web, pawsnplaywithme.com/know-your-dog): 8-section questionnaire per dog (owner + emergency contact, dog, health + record files, food, with dogs/people, triggers, routine/extras, confirm), progress bar, inline errors; `POST /questionnaires` (multipart); thank-you view |
 | Login | `/login` | email/password, admin quick-fill in mock mode |
-| Dashboard | `/admin` | capacity (edit), payments due, dog lookup, occupancy calendar, arrivals/departures/upcoming |
+| Dashboard | `/admin` | capacity (edit), payments due, Know Your Dog forms card (count of `new`), dog lookup, occupancy calendar, arrivals/departures/upcoming |
+| Know Your Dog forms | `/admin/forms` | submissions from the public form: search (dog/owner/phone), status chips New (default) / Reviewed / Archived / All, pull to refresh; `GET /questionnaires` |
+| Form detail | `/admin/forms/[id]` | dog parent contact (call / WhatsApp), safety flags, record files, answers in the form's 8 sections (labels from `kydData`); admin: mark reviewed / archive / mark as new, link to a dog or create one prefilled (`/admin/dog/new?fromForm=<id>`); `forms.manage` gates actions (staff read-only) |
 | Bookings | `/admin/bookings` | month switcher, dog filter (all-time history), date filter, status chips, + New booking |
 | Billing | `/admin/billing` | period (this/next/last week, month, custom): expected/received/due, collected, outstanding, due/paid list |
 | Boarding settings | `/admin/settings` | capacity, price per night, default times |
 | New booking | `/admin/booking/new?dogId=&date=` | booking form |
 | Booking detail | `/admin/booking/[id]` | info, check in/out/cancel, payments (record/remove), edit |
 | Dogs | `/admin/dogs` | search, active/archived, + Add dog |
-| Add dog | `/admin/dog/new` | dog form |
+| Add dog | `/admin/dog/new?fromForm=` | dog form; `fromForm` prefills from a Know Your Dog submission and links it after saving |
 | Dog detail | `/admin/dog/[id]` | profile, stay history summary, current/upcoming + past stays, new booking, edit, archive |
 | Profile | `/admin/profile` | user info, log out |
 

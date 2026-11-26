@@ -9,4 +9,6 @@ export const queryKeys = {
   occupancy: (from: string, to: string) => ['admin', 'occupancy', from, to] as const,
   billing: (from: string, to: string) => ['admin', 'billing', from, to] as const,
   users: (params?: object) => ['users', params ?? {}] as const,
+  questionnaires: (params?: object) => ['questionnaires', 'list', params ?? {}] as const,
+  questionnaire: (id: string) => ['questionnaires', 'detail', id] as const,
 };

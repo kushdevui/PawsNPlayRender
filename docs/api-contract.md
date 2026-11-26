@@ -53,7 +53,9 @@ Dates: ISO-8601 UTC strings. The app sends/receives UTC and shows local time.
 | GET | /admin/occupancy | admin, staff | `from`,`to` = `YYYY-MM-DD`; per day: occupied (peak), available, checkIns, checkOuts |
 | GET | /admin/billing | admin | `from`,`to` ISO; stays checking in that range: expected, received, due, advances, counts; `collected` = payments received in the range; outstanding all-time |
 | POST | /questionnaires | public | "Know Your Dog" form, multipart: `answers` (JSON string), `website` (honeypot, empty), `documents` (0-5 images/PDFs, ≤10 MB) -> `201 {id, createdAt}`; rate-limited (429) |
-| GET / PATCH | /questionnaires, /questionnaires/:id | admin, staff (PATCH admin) | read / review submissions - no app screen yet, not in the mock (BACKEND_API_SPEC §7.12) |
+| GET | /questionnaires | admin, staff | `status` = new / reviewed / archived (omit = all), `search` (dog, owner, phone), `page`, `limit`; newest first; items `{id, status, createdAt, dogName, breed, ownerName, ownerPhone, documentsCount}` (app: Know Your Dog forms list) |
+| GET | /questionnaires/:id | admin, staff | `{id, status, answers, documents[], dogId, reviewedBy, reviewedAt, createdAt, updatedAt}` (app: form detail) |
+| PATCH | /questionnaires/:id | admin | `{status?, dogId?}` (`dogId` = existing dog or `null`); leaving `new` sets reviewedBy/At, back to `new` clears them |
 
 ## File uploads (Phase 2)
 `POST /uploads` multipart `file` (image/* or application/pdf, ≤ 10 MB) -> `{ data: { url, mimeType, size, name } }`.
