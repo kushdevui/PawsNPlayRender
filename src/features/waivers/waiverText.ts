@@ -42,5 +42,4 @@ export const waiverText = {
   doneText: (dogName: string) =>
     `We have your signed waiver${dogName ? ` for ${dogName}` : ''}. Thank you for trusting us with your dog - we can't wait to meet them.`,
   signedAt: 'Signed',
-  reference: 'Reference',
 };

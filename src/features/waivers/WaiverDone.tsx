@@ -1,4 +1,4 @@
-// Thank-you view after the waiver is signed: signed date/time and the reference id.
+// Thank-you view after the waiver is signed: signed date/time.
 import { View } from 'react-native';
 import type { WaiverReceipt } from '@/api/types';
 import { AppText, Icon } from '@/components/common';
@@ -21,11 +21,6 @@ export function WaiverDone({ receipt, dogName }: { receipt: WaiverReceipt; dogNa
         {!!signed && (
           <AppText variant="body" align="center">
             {waiverText.signedAt}: <AppText variant="bodyStrong">{signed}</AppText>
-          </AppText>
-        )}
-        {!!receipt.id && (
-          <AppText variant="body" align="center" selectable>
-            {waiverText.reference}: <AppText variant="bodyStrong">{receipt.id}</AppText>
           </AppText>
         )}
         {!!receipt.version && <AppText variant="caption" align="center">Waiver version {receipt.version}</AppText>}

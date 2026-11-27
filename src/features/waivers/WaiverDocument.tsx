@@ -59,7 +59,7 @@ export function WaiverDocument({ content, layout, c }: { content: WaiverContent;
         <AppText variant={wide ? 'display' : 'title'} align="center" accessibilityRole="header">{content.title}</AppText>
         {content.intro.map((p, i) => (
           <View key={i} style={styles.intro}>
-            <RichText source={p} variant={i === 0 ? 'bodyStrong' : 'body'} />
+            <RichText source={p} variant={i === 0 ? 'subheading' : 'body'} align="center" />
           </View>
         ))}
         {!!content.version && <AppText variant="caption">Version {content.version}</AppText>}

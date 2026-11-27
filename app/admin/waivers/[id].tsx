@@ -1,9 +1,8 @@
 // One signed boarding waiver, read-only: signer, signed time and version, every consent with its exact label,
-// photo opt-out, the drawn signature and typed name, and links (printable copy, Know Your Dog form, dog profile).
+// photo opt-out, the drawn signature and typed name, and links (Know Your Dog form, dog profile).
 // One call: GET /waivers/:id. Linking a dog (PATCH) is admin only.
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { usePermission } from '@/auth/permissions';
 import { AppText, Badge, Card, Icon, InlineAlert, Screen, SignatureView, StateView } from '@/components/common';
 import { PhoneLinks } from '@/features/questionnaires/AnswerSections';
 import { formatSignedAt } from '@/features/waivers/WaiverCard';
@@ -15,7 +14,6 @@ export default function WaiverDetail() {
   const theme = useTheme();
   const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const can = usePermission();
   const { data: w, isLoading, error, refetch, isRefetching } = useWaiver(id);
 
   if (isLoading || error || !w) {
@@ -80,11 +78,10 @@ export default function WaiverDetail() {
           </View>
         </Card>
 
-        <WaiverLinks waiver={w} canManage={can('waivers.manage')} />
+        <WaiverLinks waiver={w} />
 
         <Card>
           <AppText variant="label" color="textMuted">RECORD</AppText>
-          <AppText variant="caption" selectable>Reference {w.id}</AppText>
           {!!w.contentHash && <AppText variant="caption" selectable>Text fingerprint {w.contentHash.slice(0, 16)}</AppText>}
           {!!w.userAgent && <AppText variant="caption" selectable numberOfLines={2}>Device {w.userAgent}</AppText>}
         </Card>

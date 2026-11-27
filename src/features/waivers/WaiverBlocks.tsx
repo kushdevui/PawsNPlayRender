@@ -20,10 +20,10 @@ export interface ConsentProps {
 }
 
 /** One line of waiver text with **bold** parts. */
-export function RichText({ source, variant = 'body', italic, color }: { source: string; variant?: TypographyVariant; italic?: boolean; color?: 'textMuted' | 'primaryText' }) {
+export function RichText({ source, variant = 'body', italic, color, align }: { source: string; variant?: TypographyVariant; italic?: boolean; color?: 'textMuted' | 'primaryText'; align?: 'left' | 'center' | 'right' }) {
   const styles = useStyles();
   return (
-    <AppText variant={variant} color={color} style={italic ? styles.italic : undefined}>
+    <AppText variant={variant} color={color} align={align} style={italic ? styles.italic : undefined}>
       {parseInline(source).map((seg, i) =>
         seg.kind === 'text' ? seg.text : <AppText key={i} variant={variant} color={color} style={[styles.bold, italic && styles.italic]}>{seg.text}</AppText>,
       )}
