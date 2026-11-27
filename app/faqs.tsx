@@ -1,6 +1,6 @@
 // Public FAQ page (/faqs). No RoleGate and no session check: it renders for logged-out
 // visitors on phones and on the web build (https://pawsnplaywithme.com/faqs).
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { Stack } from 'expo-router';
 import { AccordionItem, AppText, Chip, Screen, SearchBar } from '@/components/common';
@@ -27,7 +27,7 @@ export default function FaqsScreen() {
   const shown = visible.reduce((n, s) => n + s.items.length, 0);
 
   // Topic chips scroll to a section: keep each section's y inside the scroll content.
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const columnY = useRef(0);
   const sectionY = useRef<Record<string, number>>({});
   const pendingScroll = useRef<string | null>(null);

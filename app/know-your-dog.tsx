@@ -1,6 +1,6 @@
 // Public "Know Your Dog" questionnaire (/know-your-dog). No RoleGate and no session check: dog parents fill it
 // logged out, on the web build (https://pawsnplaywithme.com/know-your-dog) or in the app. Posts to POST /questionnaires.
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ComponentRef } from 'react';
 import { Platform, ScrollView, View, useWindowDimensions } from 'react-native';
 import { Stack } from 'expo-router';
 import { AppText, Button, InlineAlert, Screen, TextInput } from '@/components/common';
@@ -37,11 +37,11 @@ export default function KnowYourDogScreen() {
   useLeaveWarning(doneFor === null && (progress > UNTOUCHED || files.length > 0));
 
   // Scroll-to-first-error: field wrappers register here; offsets are measured against the form column.
-  const scrollRef = useRef<ScrollView>(null);
-  const columnRef = useRef<View>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const columnRef = useRef<ComponentRef<typeof View>>(null);
   const columnY = useRef(0);
-  const fieldNodes = useRef<Record<string, View | null>>({});
-  const fieldRef = useCallback((key: string) => (node: View | null) => {
+  const fieldNodes = useRef<Record<string, ComponentRef<typeof View> | null>>({});
+  const fieldRef = useCallback((key: string) => (node: ComponentRef<typeof View> | null) => {
     fieldNodes.current[key] = node;
   }, []);
 

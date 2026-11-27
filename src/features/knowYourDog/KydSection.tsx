@@ -1,4 +1,5 @@
 // One numbered section of the Know Your Dog form, rendering its fields from kydData.
+import type { ComponentRef } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { AppText, Card } from '@/components/common';
 import { parseInline } from '@/features/faqs/faqText';
@@ -17,7 +18,7 @@ interface Props {
   files: LocalFile[];
   onFilesChange: (files: LocalFile[]) => void;
   /** Ref callback per field key, used to scroll to the first error. */
-  fieldRef: (key: string) => (node: View | null) => void;
+  fieldRef: (key: string) => (node: ComponentRef<typeof View> | null) => void;
   disabled?: boolean;
 }
 
