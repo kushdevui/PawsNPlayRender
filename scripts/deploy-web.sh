@@ -10,7 +10,7 @@
 #                  && cd ~/PawsNPlayRender && bash scripts/deploy-web.sh
 #   Later:       cd ~/PawsNPlayRender && bash scripts/deploy-web.sh
 #
-# What it does: fast-forwards the branch, installs packages, builds with the public API URL baked in
+# What it does: fast-forwards the branch, installs packages (only when package.json changed), builds with the public API URL baked in
 # (EXPO_PUBLIC_API_URL=$SITE_URL/api/v1, mocks off; no .env is written), swaps the new build in
 # (the previous one is kept as app.prev), reloads Nginx and checks the pages answer. If the build
 # fails, the live site is not touched. Safe to re-run any time.
@@ -19,6 +19,7 @@
 #   BRANCH=name     deploy another branch (checked out; default: the current branch, or feat/admin-boarding)
 #   SITE_URL=...    public origin, e.g. https://pawsnplaywithme.com (default: SITE_URL in ~/.pawsnplay-deploy)
 #   FORCE=1         deploy even with uncommitted local changes (they are built in, never discarded)
+#   INSTALL=1       reinstall packages even if package.json has not changed
 set -euo pipefail
 
 DEFAULT_BRANCH="feat/admin-boarding"
@@ -120,25 +121,35 @@ SITE_HOST=$(printf '%s' "$SITE_URL" | sed -E 's#^https?://##; s#:.*$##')
 API_URL="$SITE_URL/api/v1"
 say "Site: $SITE_URL (API: $API_URL)"
 
-# ---------- 4. Packages ----------
+# ---------- 4. Packages (skipped when nothing changed since the last install) ----------
 NPM_FLAGS=(--no-audit --no-fund)
-if [ -f package-lock.json ]; then
-  say "Installing packages (npm ci)"
-  if ! npm ci "${NPM_FLAGS[@]}"; then
-    warn "npm ci failed - retrying with --legacy-peer-deps"
-    if ! npm ci "${NPM_FLAGS[@]}" --legacy-peer-deps; then
-      # A lockfile generated on this machine (not in git) can be stale after package.json changes.
-      git ls-files --error-unmatch package-lock.json >/dev/null 2>&1 && die "npm ci failed (see above)."
-      warn "Local package-lock.json is out of date - running npm install"
-      npm install "${NPM_FLAGS[@]}" || npm install "${NPM_FLAGS[@]}" --legacy-peer-deps || die "npm install failed (see above)."
+STAMP=node_modules/.pawsnplay-install-stamp
+# Fingerprint of what decides the installed packages: package.json, plus package-lock.json only if it is
+# committed (a lockfile generated on this machine changes on every install and must not trigger a reinstall).
+deps_fingerprint() {
+  {
+    cat package.json
+    git ls-files --error-unmatch package-lock.json >/dev/null 2>&1 && cat package-lock.json
+    node -v
+  } | sha256sum | cut -d' ' -f1
+}
+WANT_STAMP=$(deps_fingerprint)
+if [ "${INSTALL:-0}" != "1" ] && [ -d node_modules ] && [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$WANT_STAMP" ]; then
+  say "Packages unchanged since the last deploy - skipping install (INSTALL=1 forces it)"
+else
+  if git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+    say "Installing packages (npm ci)"
+    npm ci "${NPM_FLAGS[@]}" || npm ci "${NPM_FLAGS[@]}" --legacy-peer-deps || die "npm ci failed (see above)."
+  else
+    # No committed lockfile: npm install updates node_modules in place (much faster than npm ci,
+    # which deletes node_modules first).
+    say "Installing packages (npm install)"
+    if ! npm install "${NPM_FLAGS[@]}"; then
+      warn "npm install failed - retrying with --legacy-peer-deps"
+      npm install "${NPM_FLAGS[@]}" --legacy-peer-deps || die "npm install failed (see above)."
     fi
   fi
-else
-  say "Installing packages (npm install)"
-  if ! npm install "${NPM_FLAGS[@]}"; then
-    warn "npm install failed - retrying with --legacy-peer-deps"
-    npm install "${NPM_FLAGS[@]}" --legacy-peer-deps || die "npm install failed (see above)."
-  fi
+  printf '%s' "$WANT_STAMP" > "$STAMP"
 fi
 
 # ---------- 5. Build (the live site is untouched until this succeeds) ----------
