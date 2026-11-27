@@ -90,7 +90,7 @@ export const kydSections: KydSection[] = [
     title: 'About your dog',
     fields: [
       text('dogName', "Dog's name", 60, { required: "Please enter your dog's name.", half: true }),
-      text('breed', 'Breed', 60, { required: 'Please enter the breed (or Indie / mixed).', hint: 'Or Indie / mixed', half: true }),
+      text('breed', 'Breed', 60, { required: 'Please enter the breed (or Indie / mixed).', placeholder: 'e.g. Labrador, or Indie / mixed', half: true }),
       text('age', 'Age', 40, { required: "Please enter your dog's age.", placeholder: 'e.g. 3 years', half: true }),
       text('weight', 'Approximate weight', 40, { placeholder: 'e.g. 18 kg', half: true }),
       choice('sex', 'Sex', [{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }], { required: 'Please choose one.' }),
@@ -175,7 +175,7 @@ export const kydSections: KydSection[] = [
   {
     n: 8,
     title: 'Your requests for this stay',
-    note: 'These match the lines in italics in the Boarding Consent & Waiver. Anything marked **extra** is charged on top of the boarding rate.',
+    note: 'Anything marked **extra** is charged on top of the boarding rate.',
     fields: [
       text('trialVisit', 'Has your dog done a trial visit with us? If not, would you like to book one before the stay?', 300, {
         multiline: true,
@@ -202,7 +202,6 @@ export const kydSections: KydSection[] = [
         label: 'I confirm that everything above is complete and true to the best of my knowledge.',
         required: 'Please tick to confirm.',
       },
-      text('signName', 'Your name', 100, { required: 'Please type your name.', half: true }),
       date('signDate', 'Date', { half: true }),
     ],
   },
