@@ -3,7 +3,7 @@
 #
 # Step 2 of 2. Run the server repo's scripts/deploy-ec2.sh first (Node 22, Nginx, HTTPS, swap, API).
 # This script serves the Expo web build from /var/www/pawsnplay/app, where Nginx already routes:
-#   /faqs, /know-your-dog, /admin, /login, ...  -> this SPA (try_files ... /index.html)
+#   /faqs, /know-your-dog, /waiver, /admin, /login, ...  -> this SPA (try_files ... /index.html)
 #   /api/*                                      -> the Node API
 #
 #   First time:  git clone -b feat/admin-boarding https://github.com/kushdevui/PawsNPlayRender.git ~/PawsNPlayRender \
@@ -198,7 +198,7 @@ else
   CURL_ARGS=(-H "Host: $SITE_HOST")
 fi
 FAILED=""
-for path in /faqs /know-your-dog /admin /api/v1/health; do
+for path in /faqs /know-your-dog /waiver /admin /api/v1/health; do
   CODE=$(curl -s -m 10 -o /dev/null -w '%{http_code}' "${CURL_ARGS[@]}" "$BASE$path" 2>/dev/null || true)
   CODE="${CODE:-000}"
   if [ "$CODE" = 200 ]; then
@@ -216,6 +216,7 @@ cat <<EOF
 Live now ($COMMIT):
   FAQs:           $SITE_URL/faqs
   Know Your Dog:  $SITE_URL/know-your-dog
+  Waiver:         $SITE_URL/waiver
   Team app:       $SITE_URL/admin
 Update later:     cd $REPO_DIR && bash scripts/deploy-web.sh
 Roll back:        sudo mv $LIVE $LIVE.bad && sudo mv $PREV $LIVE && sudo rm -rf $LIVE.bad

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { Checkbox, HelperText } from 'react-native-paper';
 import { makeStyles, useTheme } from '@/theme';
@@ -10,10 +11,12 @@ interface Props {
   /** Error message shown below (e.g. "Please tick to confirm."). */
   error?: string;
   disabled?: boolean;
+  /** Custom content shown instead of the label text (e.g. a numbered item with **bold** parts). `label` stays the accessibility label. */
+  children?: ReactNode;
 }
 
 /** Labelled checkbox (Paper Checkbox, Android style on every platform so the box is always visible). Whole row is tappable. */
-export function CheckboxField({ label, value, onChange, error, disabled }: Props) {
+export function CheckboxField({ label, value, onChange, error, disabled, children }: Props) {
   const theme = useTheme();
   const styles = useStyles();
   return (
@@ -33,7 +36,7 @@ export function CheckboxField({ label, value, onChange, error, disabled }: Props
           color={theme.colors.secondary}
           uncheckedColor={error ? theme.colors.danger : theme.colors.borderStrong}
         />
-        <AppText variant="bodyStrong" style={styles.text}>{label}</AppText>
+        {children ? <View style={styles.text}>{children}</View> : <AppText variant="bodyStrong" style={styles.text}>{label}</AppText>}
       </Pressable>
       {!!error && (
         <HelperText type="error" visible padding="none" style={styles.helper}>

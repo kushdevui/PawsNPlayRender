@@ -129,6 +129,7 @@ app/                         Expo Router routes
   index.tsx                  redirect to /login or role home
   faqs.tsx                   PUBLIC FAQ page (/faqs) - no RoleGate, works logged out (phone + web)
   know-your-dog.tsx          PUBLIC "Know Your Dog" questionnaire (/know-your-dog) - no RoleGate, posts to POST /questionnaires
+  waiver.tsx                 PUBLIC "Boarding Consent & Waiver" (/waiver) - no RoleGate, text from GET /waivers/current, POST /waivers
   (auth)/login, register
   admin/
     _layout.tsx              RoleGate(admin) + Stack
@@ -137,6 +138,7 @@ app/                         Expo Router routes
     dog/new, dog/[id]
     settings                 boarding settings
     forms/index, forms/[id]  Know Your Dog submissions (list + detail; opened from the dashboard card)
+    waivers/index, waivers/[id]  signed boarding waivers (list + detail; opened from the dashboard card)
   user/, staff/              placeholders (Phase 2+)
 src/
   api/                       client.ts, types.ts, endpoints/, mock/ (adapter, routes, db)
@@ -282,10 +284,13 @@ Full contract: `docs/api-contract.md` and `mock/endpoints.json`. Envelopes: `{ d
 |---|---|---|
 | FAQs (public) | `/faqs` | no login needed (phone + web, served at pawsnplaywithme.com/faqs): quick facts, search, topic chips, collapsible questions; links to `/know-your-dog` |
 | Know Your Dog (public) | `/know-your-dog` | no login needed (phone + web, pawsnplaywithme.com/know-your-dog): 9-section questionnaire per dog, following the Nov 2026 PDF (owner + emergency contact, dog, health + record files, food, with other dogs and people, triggers and quirks, routine, your requests for this stay, confirm), progress bar, inline errors; `POST /questionnaires` (multipart); thank-you view |
+| Boarding waiver (public) | `/waiver?questionnaire=<id>` | no login needed (phone + web, pawsnplaywithme.com/waiver): the signed legal document. Text and consents come from `GET /waivers/current` (server-versioned; rendered from blocks in the PDF's style: soft cards, italic notes, Part A / Part B pills, rate card). Each consent tick sits after the text it confirms (`waiverLayout.ts`: confirm1..7 on the numbered list, acceptRisks, vetAuthorisation, acceptOtherTerms); "Your signature" card: name, dog, phone, today's date, photos opt-out, final agreement, signature pad (`SignaturePad`, PanResponder, no extra library), typed name = parent's name. Inline errors + scroll to first; one `POST /waivers`; 409 -> "Reload the waiver"; thank-you view with signed time and reference |
 | Login | `/login` | email/password, admin quick-fill in mock mode |
 | Dashboard | `/admin` | capacity (edit), payments due, Know Your Dog forms card (count of `new`), dog lookup, occupancy calendar, arrivals/departures/upcoming |
 | Know Your Dog forms | `/admin/forms` | submissions from the public form: search (dog/owner/phone), status chips New (default) / Reviewed / Archived / All, pull to refresh; `GET /questionnaires` |
 | Form detail | `/admin/forms/[id]` | **read-only** (filled by the dog parent): contact (call / WhatsApp), safety flags, record files, **every question** in the form's 9 sections with its answer or "Not answered" (labels from `kydData`), earlier-form answers under "Earlier form answers"; one call `GET /questionnaires/:id`; header (top right): **Mark reviewed** (admin, `forms.manage`) or a "Reviewed" tick |
+| Signed waivers | `/admin/waivers` | dashboard card "Signed waivers" (count signed in the last 7 days); list newest first, search (parent/dog/phone), "No photos" badge; `GET /waivers` (`waivers.view`: admin, staff) |
+| Waiver detail | `/admin/waivers/[id]` | signer + call/WhatsApp, signed time, version, photos opt-out banner, every consent with ✓ and its exact label, drawn signature (`SignatureView`), typed name, "Open printable copy" (`GET /waivers/:id/document?token=` in the browser), linked Know Your Dog form, linked dog (open / link / change / unlink - `PATCH`, admin, `waivers.manage`) |
 | Bookings | `/admin/bookings` | month switcher, dog filter (all-time history), date filter, status chips, + New booking |
 | Billing | `/admin/billing` | period (this/next/last week, month, custom): expected/received/due, collected, outstanding, due/paid list |
 | Boarding settings | `/admin/settings` | capacity, price per night, default times |

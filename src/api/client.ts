@@ -34,6 +34,8 @@ let accessToken: string | null = null;
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
 };
+/** Current access token (for links the browser opens itself, e.g. the printable waiver). */
+export const getAccessToken = () => accessToken;
 
 export const api = axios.create({
   baseURL: USE_MOCKS ? '/api/v1' : API_URL,

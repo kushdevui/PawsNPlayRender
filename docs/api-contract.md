@@ -56,6 +56,12 @@ Dates: ISO-8601 UTC strings. The app sends/receives UTC and shows local time.
 | GET | /questionnaires | admin, staff | `status` = new / reviewed / archived (omit = all), `search` (dog, owner, phone), `page`, `limit`; newest first; items `{id, status, createdAt, dogName, breed, ownerName, ownerPhone, documentsCount}` (app: Know Your Dog forms list) |
 | GET | /questionnaires/:id | admin, staff | complete submission in one call: `{id, status, answers, documents[], dogId, reviewedBy, reviewedByName, reviewedAt, createdAt, updatedAt}` (app: form detail, read-only) |
 | PATCH | /questionnaires/:id | admin | `{status?, dogId?}` (`dogId` = existing dog or `null`); leaving `new` sets reviewedBy/At, back to `new` clears them. The app sends only `{status: 'reviewed'}` (Mark reviewed) |
+| GET | /waivers/current | public | Boarding Consent & Waiver text, **owned and versioned by the server**: `{version, contentHash, content: {version, title, intro[], parts[{id, label: 'Part A'\|'Part B'\|null, title, blocks[]}]}, consents[{key, label, shortLabel, required}]}`. Blocks: `paragraph`, `card` (title?, text, note?, extra?, items?), `bullets`, `numbered`, `rates`, `statement`; text uses `**bold**`. ETag, max-age 300 |
+| POST | /waivers | public | JSON `{version, contentHash, parentName, dogName, phone, consents{confirm1..7, acceptRisks, vetAuthorisation, acceptOtherTerms, finalAgreement, photosOptOut}, typedSignature (= parentName), signature{width, height, strokes[[[x,y]]]}, questionnaireId?, website}` -> `201 {id, signedAt, version}`; `409 WAIVER_OUTDATED` (details `{version, contentHash}`; app shows Reload), 422 (message shown), 429 |
+| GET | /waivers | admin, staff | `search` (parent, dog, phone), `from`/`to` (signedAt, ISO), `page`, `limit`; newest first; items `{id, signedAt, parentName, dogName, phone, version, photosOptOut, questionnaireId, dogId}` |
+| GET | /waivers/:id | admin, staff | `{id, status, signedAt, parentName, dogName, phone, version, contentHash, content, consents[{key, label, value}], photosOptOut, typedSignature, signature, signatureSvg, questionnaireId, dogId, userAgent, createdAt, updatedAt}` |
+| GET | /waivers/:id/document | admin, staff | `?token=<accessToken>`: printable HTML of the signed waiver (opened in the browser; app: `waiversApi.documentUrl(id)`) |
+| PATCH | /waivers/:id | admin | `{dogId?, questionnaireId?}` (existing id or `null`) -> Waiver |
 
 ## File uploads (Phase 2)
 `POST /uploads` multipart `file` (image/* or application/pdf, ≤ 10 MB) -> `{ data: { url, mimeType, size, name } }`.

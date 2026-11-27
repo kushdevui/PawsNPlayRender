@@ -18,7 +18,7 @@
 5. [Error codes](#5-error-codes)
 6. [Data models (MongoDB)](#6-data-models-mongodb)
 7. [Endpoints](#7-endpoints)
-   - 7.1 Health · 7.2 Auth · 7.3 Users · 7.4 Dogs · 7.5 Bookings · 7.6 Payments · 7.7 Settings · 7.8 Dashboard · 7.9 Occupancy · 7.10 Billing · 7.11 Uploads · 7.12 Questionnaires
+   - 7.1 Health · 7.2 Auth · 7.3 Users · 7.4 Dogs · 7.5 Bookings · 7.6 Payments · 7.7 Settings · 7.8 Dashboard · 7.9 Occupancy · 7.10 Billing · 7.11 Uploads · 7.12 Questionnaires · 7.13 Waivers
 8. [Business rules (exact algorithms)](#8-business-rules-exact-algorithms)
 9. [Auth & security](#9-auth--security)
 10. [Seed data](#10-seed-data)
@@ -661,6 +661,20 @@ to unlink; unknown -> 422 `"Choose an existing dog."`). Moving away from `new` s
 to `new` clears them. `200 { data: Questionnaire }`. The app only sends `{ "status": "reviewed" }` (Mark reviewed);
 `dogId` is kept in the API but the app no longer links forms to dog profiles.
 
+### 7.13 Waivers ("Boarding Consent & Waiver")
+
+> **The server repo owns the detailed contract** (PawsNPlayServer `docs/api-contract.md` / `docs/endpoints.json`):
+> the waiver text, its versions and content hash, validation messages and the printable document live there.
+> Summary of what the app uses: `GET /waivers/current` (public), `POST /waivers` (public, JSON, rate-limited),
+> `GET /waivers`, `GET /waivers/:id`, `GET /waivers/:id/document?token=` (admin, staff), `PATCH /waivers/:id`
+> (admin, `{dogId?, questionnaireId?}`). Shapes: see `docs/api-contract.md` in this repo. The app signs at `/waiver`
+> (public) and shows signed waivers at `/admin/waivers` and `/admin/waivers/[id]`.
+
+Rules the app mirrors client-side: every `required` consent `true`; phone 7-20 of digits, `+`, `-`, spaces; typed
+signature = parent's name (case / extra spaces ignored); signature box 100-2000 px each way, 1-100 strokes, 10-5000
+points in total, all points inside the box, at least 20 px across. A `version` / `contentHash` that is not current ->
+`409 WAIVER_OUTDATED` with `details: { version, contentHash }`.
+
 ---
 
 ## 8. Business rules (exact algorithms)
@@ -860,6 +874,12 @@ The app's axios client sends `Authorization: Bearer <accessToken>`, expects the 
 | 29 | GET | /questionnaires | admin, staff | 200 List<QuestionnaireListItem> |
 | 30 | GET | /questionnaires/:id | admin, staff | 200 Questionnaire |
 | 31 | PATCH | /questionnaires/:id | admin | 200 Questionnaire |
+| 32 | GET | /waivers/current | public | 200 CurrentWaiver |
+| 33 | POST | /waivers | public (rate-limited) | 201 { id, signedAt, version } |
+| 34 | GET | /waivers | admin, staff | 200 List<WaiverListItem> |
+| 35 | GET | /waivers/:id | admin, staff | 200 Waiver |
+| 36 | GET | /waivers/:id/document | admin, staff (`?token=`) | 200 text/html |
+| 37 | PATCH | /waivers/:id | admin | 200 Waiver |
 
 **Prompt to give the backend agent:**
 > Build the Node.js + TypeScript + Express + MongoDB (Mongoose) REST API described in `BACKEND_API_SPEC.md`

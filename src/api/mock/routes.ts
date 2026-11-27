@@ -1,6 +1,6 @@
 // Mock route handlers for the boarding admin. Mirrors mock/endpoints.json and docs/ARCHITECTURE.md.
 // No axios here, so it is easy to unit test. The Node backend should implement the same rules.
-import { db, newId, publicUser, type MockUser, type StoredBooking } from './db';
+import { db, newId, publicUser, type MockUser, type StoredBooking, type StoredWaiver } from './db';
 import type { Booking, BookingStatus, Dog, PaymentStatus, Questionnaire, QuestionnaireStatus, Role } from '../types';
 
 export interface MockRequest {
@@ -190,6 +190,52 @@ const questionnaireListItem = (q: Questionnaire) => ({
   id: q.id, status: q.status, createdAt: q.createdAt, dogName: answer(q, 'dogName'), breed: answer(q, 'breed'),
   ownerName: answer(q, 'ownerName'), ownerPhone: answer(q, 'ownerPhone'), documentsCount: q.documents.length,
 });
+
+// Waivers (server owns the text; the mock checks the main rules so the app's errors can be tried out).
+const WAIVER_PHONE = /^[0-9+\-\s]{7,20}$/;
+const squashName = (s: unknown) => String(s ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+const waiverListItem = (w: StoredWaiver) => ({
+  id: w.id, signedAt: w.signedAt, parentName: w.parentName, dogName: w.dogName, phone: w.phone, version: w.version,
+  photosOptOut: w.photosOptOut, questionnaireId: w.questionnaireId, dogId: w.dogId,
+});
+const checkSignature = (sig: any) => {
+  const strokes: unknown[] = Array.isArray(sig?.strokes) ? sig.strokes : [];
+  const points = strokes.flatMap((s) => (Array.isArray(s) ? s : [])) as number[][];
+  const okSize = [sig?.width, sig?.height].every((n) => typeof n === 'number' && n >= 100 && n <= 2000);
+  const inBox = points.every((p) => Array.isArray(p) && p[0] >= 0 && p[0] <= sig.width && p[1] >= 0 && p[1] <= sig.height);
+  const span = points.length
+    ? Math.max(Math.max(...points.map((p) => p[0])) - Math.min(...points.map((p) => p[0])), Math.max(...points.map((p) => p[1])) - Math.min(...points.map((p) => p[1])))
+    : 0;
+  if (!okSize || strokes.length < 1 || strokes.length > 100 || points.length < 10 || points.length > 5000 || !inBox || span < 20) {
+    fail(422, 'VALIDATION_ERROR', 'Please sign in the box.');
+  }
+};
+const submitWaiver = (body: any): MockResponse => {
+  const cur = db.waiverCurrent;
+  if (body?.version !== cur.version || body?.contentHash !== cur.contentHash) {
+    fail(409, 'WAIVER_OUTDATED', 'The waiver was updated while you were reading it. Please reload it and sign again.', { version: cur.version, contentHash: cur.contentHash });
+  }
+  if (body?.website) return ok({ id: newId('w'), signedAt: nowIso(), version: cur.version }, 201); // honeypot
+  if (!String(body?.parentName ?? '').trim()) fail(422, 'VALIDATION_ERROR', 'Please enter your name.');
+  if (!String(body?.dogName ?? '').trim()) fail(422, 'VALIDATION_ERROR', "Please enter your dog's name.");
+  if (!WAIVER_PHONE.test(String(body?.phone ?? '').trim())) fail(422, 'VALIDATION_ERROR', 'Please enter a valid phone number.');
+  const consents = body?.consents ?? {};
+  const missing = cur.consents.find((c) => c.required && consents[c.key] !== true);
+  if (missing) fail(422, 'VALIDATION_ERROR', `Please tick: ${missing.shortLabel}`);
+  if (squashName(body?.typedSignature) !== squashName(body?.parentName)) fail(422, 'VALIDATION_ERROR', "Your typed name must match the pet parent's name.");
+  checkSignature(body?.signature);
+  if (body?.questionnaireId && !db.questionnaires.some((q) => q.id === body.questionnaireId)) body.questionnaireId = null;
+  const signedAt = nowIso();
+  const w: StoredWaiver = {
+    id: newId('w'), status: 'signed', signedAt, parentName: String(body.parentName).trim(), dogName: String(body.dogName).trim(),
+    phone: String(body.phone).trim(), version: cur.version, contentHash: cur.contentHash,
+    consents: cur.consents.map((c) => ({ key: c.key, label: c.label, value: consents[c.key] === true })),
+    photosOptOut: consents.photosOptOut === true, typedSignature: String(body.typedSignature).trim(), signature: body.signature,
+    signatureSvg: '', questionnaireId: body.questionnaireId ?? null, dogId: null, userAgent: 'Mock', createdAt: signedAt, updatedAt: signedAt,
+  };
+  db.waivers.push(w);
+  return ok({ id: w.id, signedAt, version: w.version }, 201);
+};
 
 // ---------- routes ----------
 const STAFF: Role[] = ['admin', 'staff'];
@@ -524,6 +570,36 @@ const routes: Array<[string, string, Handler]> = [
     if (dogId !== undefined) q.dogId = dogId;
     q.updatedAt = nowIso();
     return ok(withReviewer(q));
+  }],
+
+  // Boarding Consent & Waiver (server spec: Waivers). /waivers/current must stay before /waivers/:id.
+  ['GET', '/waivers/current', () => ok(db.waiverCurrent)],
+  ['POST', '/waivers', ({ body }) => submitWaiver(body)],
+  ['GET', '/waivers', (ctx) => {
+    requireUser(ctx, STAFF);
+    const s = ctx.query.search?.trim().toLowerCase();
+    const f = ctx.query.from ? ms(ctx.query.from) : -Infinity;
+    const t = ctx.query.to ? ms(ctx.query.to) : Infinity;
+    const items = db.waivers
+      .filter((w) => ms(w.signedAt) >= f && ms(w.signedAt) < t)
+      .filter((w) => !s || [w.parentName, w.dogName, w.phone].some((v) => v.toLowerCase().includes(s)))
+      .sort((a, b) => b.signedAt.localeCompare(a.signedAt))
+      .map(waiverListItem);
+    return list(items, ctx.query);
+  }],
+  ['GET', '/waivers/:id', (ctx) => (requireUser(ctx, STAFF), ok({ ...findOr404(db.waivers, ctx.params.id, 'Waiver'), content: db.waiverCurrent.content }))],
+  ['PATCH', '/waivers/:id', (ctx) => {
+    requireUser(ctx, ['admin']);
+    const w = findOr404(db.waivers, ctx.params.id, 'Waiver');
+    const { dogId, questionnaireId } = ctx.body ?? {};
+    if (dogId !== undefined && dogId !== null && !db.dogs.some((d) => d.id === dogId)) fail(422, 'VALIDATION_ERROR', 'Choose an existing dog.');
+    if (questionnaireId !== undefined && questionnaireId !== null && !db.questionnaires.some((q) => q.id === questionnaireId)) {
+      fail(422, 'VALIDATION_ERROR', 'Choose an existing Know Your Dog form.');
+    }
+    if (dogId !== undefined) w.dogId = dogId;
+    if (questionnaireId !== undefined) w.questionnaireId = questionnaireId;
+    w.updatedAt = nowIso();
+    return ok({ ...w, content: db.waiverCurrent.content });
   }],
 ];
 

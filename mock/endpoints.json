@@ -470,6 +470,121 @@
         "NOT_FOUND"
       ],
       "note": "Leaving new sets reviewedBy/reviewedAt; back to new clears them."
+    },
+    {
+      "group": "waivers",
+      "method": "GET",
+      "path": "/waivers/current",
+      "roles": [
+        "public"
+      ],
+      "response": {
+        "data": "{ version, contentHash, content: { version, title, intro: string[], parts: [{ id, label: 'Part A'|'Part B'|null, title, blocks: Block[] }] }, consents: [{ key, label, shortLabel, required }] }"
+      },
+      "note": "Block = paragraph {text} | card {title?, text, note?, extra?, items?} | bullets {title?, items} | numbered {intro, items} | rates {title, text, items: [{price, label}]} | statement {text}. Text uses **bold**. Server owns and versions the text (ETag, max-age=300).",
+      "source": "data/waivers.json (current)"
+    },
+    {
+      "group": "waivers",
+      "method": "POST",
+      "path": "/waivers",
+      "roles": [
+        "public"
+      ],
+      "body": {
+        "version": "string (from /waivers/current)",
+        "contentHash": "string",
+        "parentName": "string",
+        "dogName": "string",
+        "phone": "7-20 of digits + - space",
+        "consents": "{ confirm1..confirm7, acceptRisks, vetAuthorisation, acceptOtherTerms, finalAgreement: true (required), photosOptOut: boolean }",
+        "typedSignature": "must match parentName (case / spaces ignored)",
+        "signature": "{ width, height (100-2000), strokes: [[[x, y], ...]] } 1-100 strokes, 10-5000 points, inside the box, >= 20px across",
+        "questionnaireId": "optional Know Your Dog form id",
+        "website": "honeypot - empty"
+      },
+      "response": {
+        "data": {
+          "id": "string",
+          "signedAt": "ISO",
+          "version": "string"
+        }
+      },
+      "errors": [
+        "WAIVER_OUTDATED (409, details { version, contentHash })",
+        "VALIDATION_ERROR (422)",
+        "RATE_LIMITED (429)"
+      ],
+      "note": "Mock stores the signature in memory."
+    },
+    {
+      "group": "waivers",
+      "method": "GET",
+      "path": "/waivers",
+      "roles": [
+        "admin",
+        "staff"
+      ],
+      "query": {
+        "search": "parent name, dog name or phone",
+        "from": "ISO (signedAt >=)",
+        "to": "ISO (signedAt <)",
+        "page": "int",
+        "limit": "int"
+      },
+      "response": {
+        "data": "[{ id, signedAt, parentName, dogName, phone, version, photosOptOut, questionnaireId, dogId }] newest first",
+        "meta": "{ total, page, limit }"
+      },
+      "source": "data/waivers.json (signed)"
+    },
+    {
+      "group": "waivers",
+      "method": "GET",
+      "path": "/waivers/:id",
+      "roles": [
+        "admin",
+        "staff"
+      ],
+      "response": {
+        "data": "Waiver: id, status 'signed', signedAt, parentName, dogName, phone, version, contentHash, content (snapshot), consents [{ key, label, value }], photosOptOut, typedSignature, signature { width, height, strokes }, signatureSvg, questionnaireId, dogId, userAgent, createdAt, updatedAt"
+      },
+      "errors": [
+        "NOT_FOUND"
+      ]
+    },
+    {
+      "group": "waivers",
+      "method": "GET",
+      "path": "/waivers/:id/document",
+      "roles": [
+        "admin",
+        "staff"
+      ],
+      "query": {
+        "token": "access token (the browser opens this link itself, no Authorization header)"
+      },
+      "response": "text/html - printable copy of the signed waiver",
+      "note": "Not mocked (the app shows 'not available in mock mode')."
+    },
+    {
+      "group": "waivers",
+      "method": "PATCH",
+      "path": "/waivers/:id",
+      "roles": [
+        "admin"
+      ],
+      "body": {
+        "dogId": "existing dog id or null (optional)",
+        "questionnaireId": "existing form id or null (optional)"
+      },
+      "response": {
+        "data": "Waiver"
+      },
+      "errors": [
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ]
     }
   ]
 }

@@ -11,4 +11,7 @@ export const queryKeys = {
   users: (params?: object) => ['users', params ?? {}] as const,
   questionnaires: (params?: object) => ['questionnaires', 'list', params ?? {}] as const,
   questionnaire: (id: string) => ['questionnaires', 'detail', id] as const,
+  currentWaiver: ['waivers', 'current'] as const,
+  waivers: (params?: object) => ['waivers', 'list', params ?? {}] as const,
+  waiver: (id: string) => ['waivers', 'detail', id] as const,
 };

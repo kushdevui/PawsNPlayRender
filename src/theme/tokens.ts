@@ -60,6 +60,10 @@ export const sizes = {
   logoLg: 140, // hero logo height
   contentMaxWidth: 860, // max content width on wide screens (web/desktop)
   breakpointWide: 640, // window width from which layouts switch to their wide variant
+  signaturePadHeight: 180, // drawing box of the signature pad
+  signatureViewHeight: 140, // a saved signature shown read-only (admin)
+  signatureStroke: 2.5, // pen width, in the box's own pixels
+  signatureMinStep: 2, // pen points closer than this (px) are skipped
 } as const;
 
 export type Spacing = keyof typeof spacing;

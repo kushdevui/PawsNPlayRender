@@ -11,6 +11,7 @@ import { OccupancyCalendar } from '@/features/dashboard/OccupancyCalendar';
 import { useDashboard } from '@/features/dashboard/hooks';
 import { useDogOptions } from '@/features/dogs/hooks';
 import { useNewQuestionnairesCount } from '@/features/questionnaires/hooks';
+import { useRecentWaiversCount } from '@/features/waivers/hooks';
 import { CapacitySheet } from '@/features/settings/CapacitySheet';
 import { makeStyles } from '@/theme';
 import { formatDate } from '@/utils/date';
@@ -26,6 +27,7 @@ export default function AdminDashboard() {
   const setStatus = useSetBookingStatus();
   const dogOptions = useDogOptions(true);
   const newForms = useNewQuestionnairesCount();
+  const recentWaivers = useRecentWaiversCount();
   const [editingCapacity, setEditingCapacity] = useState(false);
   const [findingDog, setFindingDog] = useState(false);
 
@@ -55,6 +57,7 @@ export default function AdminDashboard() {
             onRefresh={() => {
               void refetch();
               void newForms.refetch();
+              void recentWaivers.refetch();
             }}
           />
         }
@@ -119,6 +122,22 @@ export default function AdminDashboard() {
               </View>
             </View>
             {!!newForms.count && <Badge label={`${newForms.count} new`} tone="brand" />}
+          </View>
+        </Card>
+
+        {/* Signed boarding waivers */}
+        <Card onPress={() => router.push('/admin/waivers')} accessibilityLabel="Signed waivers">
+          <View style={styles.between}>
+            <View style={styles.formsTitle}>
+              <Icon name="file-sign" color="textMuted" />
+              <View style={styles.flex}>
+                <AppText variant="label" color="textMuted">SIGNED WAIVERS</AppText>
+                <AppText variant="caption">
+                  {recentWaivers.isLoading ? 'Checking for new waivers…' : recentWaivers.error ? 'Could not load · tap to open' : recentWaivers.count ? 'Signed in the last 7 days · tap to see all' : 'None in the last 7 days · tap to see all'}
+                </AppText>
+              </View>
+            </View>
+            {!!recentWaivers.count && <Badge label={`${recentWaivers.count} this week`} tone="brand" />}
           </View>
         </Card>
 

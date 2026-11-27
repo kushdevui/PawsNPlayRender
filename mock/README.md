@@ -14,6 +14,7 @@ mock/
     bookings.json       # boarding stays around Nov-Dec 2026 (some checked in "now")
     settings.json       # capacity (15), default check-in/out times, price per night
     questionnaires.json # 2 sample Know Your Dog submissions (POST /questionnaires is acknowledged, not stored)
+    waivers.json        # current waiver text + consents (mirrors the Nov 2026 PDF) and 1 signed waiver; POST /waivers is stored in memory
 ```
 
 ## Switching mock <-> real API

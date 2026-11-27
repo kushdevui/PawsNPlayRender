@@ -283,6 +283,125 @@ export interface QuestionnaireUpdate {
   dogId?: string | null;
 }
 
+// ---------- Waivers ("Boarding Consent & Waiver", server-owned and versioned) ----------
+/** Text may contain **bold** markup (parse with parseInline from features/faqs/faqText). */
+export type WaiverBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'card'; title?: string; text: string; note?: string; extra?: string; items?: string[] }
+  | { type: 'bullets'; title?: string; items: string[] }
+  | { type: 'numbered'; intro: string; items: string[] }
+  | { type: 'rates'; title: string; text: string; items: Array<{ price: string; label: string }> }
+  | { type: 'statement'; text: string };
+
+export interface WaiverPart {
+  id: string;
+  label: 'Part A' | 'Part B' | null;
+  title: string;
+  blocks: WaiverBlock[];
+}
+
+export interface WaiverContent {
+  version: string;
+  title: string;
+  intro: string[];
+  parts: WaiverPart[];
+}
+
+export interface WaiverConsentDef {
+  key: string;
+  /** Exact text agreed to (stored with the signature). May span lines ("\n", "• " bullets). */
+  label: string;
+  /** Few words for messages ("Please tick: <shortLabel>"). */
+  shortLabel: string;
+  required: boolean;
+}
+
+/** GET /waivers/current (public). */
+export interface CurrentWaiver {
+  version: string;
+  contentHash: string;
+  content: WaiverContent;
+  consents: WaiverConsentDef[];
+}
+
+/** Signature drawn on the pad: strokes of [x, y] points in a width x height box (pixels). */
+export interface SignatureData {
+  width: number;
+  height: number;
+  strokes: number[][][];
+}
+
+/** POST /waivers (public). `website` is the honeypot (empty for real people). */
+export interface WaiverSubmission {
+  version: string;
+  contentHash: string;
+  parentName: string;
+  dogName: string;
+  phone: string;
+  consents: Record<string, boolean>;
+  typedSignature: string;
+  signature: SignatureData;
+  questionnaireId?: string;
+  website: string;
+}
+
+export interface WaiverReceipt {
+  id: string;
+  signedAt: string;
+  version: string;
+}
+
+/** Row in GET /waivers (newest first). */
+export interface WaiverListItem {
+  id: string;
+  signedAt: string;
+  parentName: string;
+  dogName: string;
+  phone: string;
+  version: string;
+  photosOptOut: boolean;
+  questionnaireId: string | null;
+  dogId: string | null;
+}
+
+/** GET /waivers/:id */
+export interface Waiver {
+  id: string;
+  signedAt: string;
+  parentName: string;
+  dogName: string;
+  phone: string;
+  version: string;
+  contentHash: string;
+  consents: Array<{ key: string; label: string; value: boolean }>;
+  photosOptOut: boolean;
+  typedSignature: string;
+  signature: SignatureData | null;
+  signatureSvg: string;
+  questionnaireId: string | null;
+  dogId: string | null;
+  userAgent: string;
+  status: 'signed';
+  /** Snapshot of the text that was signed (null if the server left it out). */
+  content: WaiverContent | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WaiverFilters {
+  /** Parent name, dog name or phone (substring, case-insensitive). */
+  search?: string;
+  /** signedAt range, ISO. */
+  from?: string;
+  to?: string;
+}
+
+/** PATCH /waivers/:id (admin). null unlinks. */
+export interface WaiverUpdate {
+  dogId?: string | null;
+  questionnaireId?: string | null;
+}
+
 // ---------- Envelopes ----------
 export interface ApiItem<T> {
   data: T;

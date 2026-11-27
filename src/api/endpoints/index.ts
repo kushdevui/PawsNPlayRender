@@ -3,15 +3,17 @@
 // Responses pass through ../normalize so a server shape that differs from the contract
 // never crashes a screen (missing fields get defaults + a dev warning).
 import { appendFile, multipartConfig, type LocalFile } from '@/lib/attachments';
-import { api } from '../client';
+import { API_URL, USE_MOCKS, api, getAccessToken } from '../client';
 import {
-  normalizeAuth, normalizeBilling, normalizeBooking, normalizeDashboard, normalizeDog, normalizeOccupancy, normalizeQuestionnaire,
-  normalizeQuestionnaireListItem, normalizeSettings, normalizeUser,
+  normalizeAuth, normalizeBilling, normalizeBooking, normalizeCurrentWaiver, normalizeDashboard, normalizeDog, normalizeOccupancy,
+  normalizeQuestionnaire, normalizeQuestionnaireListItem, normalizeSettings, normalizeUser, normalizeWaiver, normalizeWaiverListItem,
+  normalizeWaiverReceipt,
 } from '../normalize';
 import type {
   ApiList, AuthResponse, BillingSummary, Booking, BookingFilters, BookingInput, BookingStatus, PaymentInput,
   DashboardStats, Dog, DogInput, DogStatus, FacilitySettings, ListParams, OccupancyCalendar, Questionnaire, QuestionnaireAnswers,
-  QuestionnaireFilters, QuestionnaireListItem, QuestionnaireReceipt, QuestionnaireUpdate, Role, User, UserStatus,
+  QuestionnaireFilters, QuestionnaireListItem, QuestionnaireReceipt, QuestionnaireUpdate, Role, User, UserStatus, CurrentWaiver,
+  Waiver, WaiverFilters, WaiverListItem, WaiverReceipt, WaiverSubmission, WaiverUpdate,
 } from '../types';
 
 /** Unwrap `{ data }` (or a bare object, if the server skips the envelope). */
@@ -94,5 +96,24 @@ export const questionnairesApi = {
     form.append('website', website);
     for (const file of files) await appendFile(form, 'documents', file);
     return item<QuestionnaireReceipt>(api.post('/questionnaires', form, multipartConfig()));
+  },
+};
+
+/**
+ * "Boarding Consent & Waiver". The text is owned and versioned by the server (GET /waivers/current);
+ * submit is public (JSON, one call). list / get: admin + staff. update (linked dog / form): admin.
+ */
+export const waiversApi = {
+  current: () => item<CurrentWaiver>(api.get('/waivers/current'), normalizeCurrentWaiver),
+  submit: (body: WaiverSubmission) => item<WaiverReceipt>(api.post('/waivers', body), normalizeWaiverReceipt),
+  list: (params?: ListParams & WaiverFilters) => list<WaiverListItem>(api.get('/waivers', { params }), normalizeWaiverListItem),
+  get: (id: string) => item<Waiver>(api.get(`/waivers/${id}`), normalizeWaiver),
+  update: (id: string, body: WaiverUpdate) => item<Waiver>(api.patch(`/waivers/${id}`, body), normalizeWaiver),
+  /** Printable HTML of a signed waiver, opened in the browser. The browser can't send our header, so the token
+   *  goes in the query string. null in mock mode (there is no server to render it). */
+  documentUrl: (id: string): string | null => {
+    if (USE_MOCKS) return null;
+    const token = getAccessToken();
+    return `${API_URL}/waivers/${encodeURIComponent(id)}/document${token ? `?token=${encodeURIComponent(token)}` : ''}`;
   },
 };

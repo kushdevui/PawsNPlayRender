@@ -17,6 +17,8 @@ export default function AdminLayout() {
         <Stack.Screen name="settings" options={{ title: 'Boarding settings' }} />
         <Stack.Screen name="forms/index" options={{ title: 'Know Your Dog forms' }} />
         <Stack.Screen name="forms/[id]" options={{ title: 'Form' }} />
+        <Stack.Screen name="waivers/index" options={{ title: 'Signed waivers' }} />
+        <Stack.Screen name="waivers/[id]" options={{ title: 'Waiver' }} />
       </Stack>
     </RoleGate>
   );

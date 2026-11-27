@@ -2,8 +2,9 @@
 // (docs/BACKEND_API_SPEC.md). Missing fields get safe defaults instead of crashing screens,
 // and in development we warn once per field so the backend can be aligned.
 import type {
-  AuthResponse, BillingSummary, Booking, DashboardStats, Dog, FacilitySettings, OccupancyCalendar, PaymentStatus, Questionnaire,
-  QuestionnaireAnswers, QuestionnaireListItem, QuestionnaireStatus, User,
+  AuthResponse, BillingSummary, Booking, CurrentWaiver, DashboardStats, Dog, FacilitySettings, OccupancyCalendar, PaymentStatus,
+  Questionnaire, QuestionnaireAnswers, QuestionnaireListItem, QuestionnaireStatus, SignatureData, User, Waiver, WaiverBlock,
+  WaiverContent, WaiverListItem, WaiverPart, WaiverReceipt,
 } from './types';
 
 const warned = new Set<string>();
@@ -231,6 +232,125 @@ export function normalizeQuestionnaire(raw: any): Questionnaire {
     reviewedAt: raw?.reviewedAt ?? null,
     createdAt: str(raw?.createdAt),
     updatedAt: str(raw?.updatedAt),
+  };
+}
+
+// ---------- Waivers ----------
+const strs = (v: unknown) => arr<unknown>(v).map((x) => str(x)).filter(Boolean);
+const refId = (v: any): string | null => (v ? (typeof v === 'object' ? idOf(v) || null : str(v)) : null);
+
+/** One content block; unknown types (or blocks without text) are dropped so the page never crashes. */
+function normalizeWaiverBlock(raw: any): WaiverBlock | null {
+  const opt = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+  switch (raw?.type) {
+    case 'paragraph':
+    case 'statement':
+      return raw.text ? { type: raw.type, text: str(raw.text) } : null;
+    case 'card':
+      return raw.text || raw.title
+        ? {
+            type: 'card',
+            title: opt(raw.title),
+            text: str(raw.text),
+            note: opt(raw.note),
+            extra: opt(raw.extra),
+            ...(Array.isArray(raw.items) ? { items: strs(raw.items) } : {}),
+          }
+        : null;
+    case 'bullets':
+      return { type: 'bullets', title: opt(raw.title), items: strs(raw.items) };
+    case 'numbered':
+      return { type: 'numbered', intro: str(raw.intro), items: strs(raw.items) };
+    case 'rates':
+      return {
+        type: 'rates',
+        title: str(raw.title),
+        text: str(raw.text),
+        items: arr<any>(raw.items).map((i) => ({ price: str(i?.price), label: str(i?.label) })),
+      };
+    default:
+      return null;
+  }
+}
+
+const normalizeWaiverPart = (raw: any, i: number): WaiverPart => ({
+  id: str(raw?.id, `part${i + 1}`),
+  label: raw?.label === 'Part A' || raw?.label === 'Part B' ? raw.label : null,
+  title: str(raw?.title),
+  blocks: arr<any>(raw?.blocks).map(normalizeWaiverBlock).filter((b): b is WaiverBlock => b !== null),
+});
+
+const normalizeWaiverContent = (c: any, version: unknown): WaiverContent => ({
+  version: str(c?.version ?? version),
+  title: str(c?.title, 'Boarding Consent & Waiver'),
+  intro: strs(c?.intro),
+  parts: arr<any>(c?.parts).map(normalizeWaiverPart),
+});
+
+export function normalizeCurrentWaiver(raw: any): CurrentWaiver {
+  warnMissing('CurrentWaiver', raw, ['version', 'contentHash', 'content', 'consents']);
+  return {
+    version: str(raw?.version ?? raw?.content?.version),
+    contentHash: str(raw?.contentHash),
+    content: normalizeWaiverContent(raw?.content, raw?.version),
+    consents: arr<any>(raw?.consents)
+      .filter((x) => x?.key)
+      .map((x) => ({
+        key: str(x.key),
+        label: str(x.label),
+        shortLabel: str(x.shortLabel, str(x.label).split('\n')[0]),
+        required: x.required !== false,
+      })),
+  };
+}
+
+export const normalizeWaiverReceipt = (raw: any): WaiverReceipt => ({
+  id: idOf(raw),
+  signedAt: str(raw?.signedAt ?? raw?.createdAt),
+  version: str(raw?.version),
+});
+
+const normalizeSignature = (raw: any): SignatureData | null => {
+  if (!raw || typeof raw !== 'object') return null;
+  const strokes = arr<unknown>(raw.strokes)
+    .map((s) => arr<unknown>(s).filter((p): p is number[] => Array.isArray(p) && p.length >= 2).map((p) => [num(p[0]), num(p[1])]))
+    .filter((s) => s.length > 0);
+  const width = num(raw.width);
+  const height = num(raw.height);
+  return width > 0 && height > 0 && strokes.length ? { width, height, strokes } : null;
+};
+
+export function normalizeWaiverListItem(raw: any): WaiverListItem {
+  warnMissing('WaiverListItem', raw, ['id', 'signedAt', 'parentName', 'dogName', 'phone']);
+  return {
+    id: idOf(raw),
+    signedAt: str(raw?.signedAt ?? raw?.createdAt),
+    parentName: str(raw?.parentName),
+    dogName: str(raw?.dogName, 'Dog'),
+    phone: str(raw?.phone),
+    version: str(raw?.version),
+    photosOptOut: raw?.photosOptOut === true,
+    questionnaireId: refId(raw?.questionnaireId),
+    dogId: refId(raw?.dogId),
+  };
+}
+
+export function normalizeWaiver(raw: any): Waiver {
+  warnMissing('Waiver', raw, ['id', 'signedAt', 'parentName', 'dogName', 'consents', 'signature']);
+  return {
+    ...normalizeWaiverListItem(raw),
+    contentHash: str(raw?.contentHash),
+    consents: arr<any>(raw?.consents)
+      .filter((x) => x?.key)
+      .map((x) => ({ key: str(x.key), label: str(x.label, str(x.key)), value: x.value === true })),
+    typedSignature: str(raw?.typedSignature),
+    signature: normalizeSignature(raw?.signature),
+    signatureSvg: str(raw?.signatureSvg),
+    userAgent: str(raw?.userAgent),
+    status: 'signed',
+    content: raw?.content && typeof raw.content === 'object' ? normalizeWaiverContent(raw.content, raw?.version) : null,
+    createdAt: str(raw?.createdAt ?? raw?.signedAt),
+    updatedAt: str(raw?.updatedAt ?? raw?.createdAt),
   };
 }
 

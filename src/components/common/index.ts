@@ -28,6 +28,8 @@ export { SectionHeader } from './SectionHeader';
 export { SegmentedControl } from './SegmentedControl';
 export { SelectField, SelectSheet, type SelectOption } from './SelectField';
 export { Sheet } from './Sheet';
+export { SignaturePad } from './SignaturePad';
+export { SignatureView, StrokeRenderer } from './SignatureView';
 export { StateView } from './StateView';
 export { SwitchField } from './SwitchField';
 export { TextInput, type TextInputProps } from './TextInput';

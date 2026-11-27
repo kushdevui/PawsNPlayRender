@@ -1,4 +1,4 @@
-// Top bar shared by the public pages (/faqs, /know-your-dog): logo + name and an optional progress bar (the Know Your Dog form shows how much is filled in).
+// Top bar shared by the public pages (/faqs, /know-your-dog, /waiver): logo + name and an optional progress bar (the Know Your Dog form shows how much is filled in).
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import { AppText, Logo, ProgressBar } from '@/components/common';
