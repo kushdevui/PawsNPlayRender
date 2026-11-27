@@ -54,8 +54,8 @@ Dates: ISO-8601 UTC strings. The app sends/receives UTC and shows local time.
 | GET | /admin/billing | admin | `from`,`to` ISO; stays checking in that range: expected, received, due, advances, counts; `collected` = payments received in the range; outstanding all-time |
 | POST | /questionnaires | public | "Know Your Dog" form, multipart: `answers` (JSON string), `website` (honeypot, empty), `documents` (0-5 images/PDFs, ≤10 MB) -> `201 {id, createdAt}`; rate-limited (429) |
 | GET | /questionnaires | admin, staff | `status` = new / reviewed / archived (omit = all), `search` (dog, owner, phone), `page`, `limit`; newest first; items `{id, status, createdAt, dogName, breed, ownerName, ownerPhone, documentsCount}` (app: Know Your Dog forms list) |
-| GET | /questionnaires/:id | admin, staff | `{id, status, answers, documents[], dogId, reviewedBy, reviewedAt, createdAt, updatedAt}` (app: form detail) |
-| PATCH | /questionnaires/:id | admin | `{status?, dogId?}` (`dogId` = existing dog or `null`); leaving `new` sets reviewedBy/At, back to `new` clears them |
+| GET | /questionnaires/:id | admin, staff | complete submission in one call: `{id, status, answers, documents[], dogId, reviewedBy, reviewedByName, reviewedAt, createdAt, updatedAt}` (app: form detail, read-only) |
+| PATCH | /questionnaires/:id | admin | `{status?, dogId?}` (`dogId` = existing dog or `null`); leaving `new` sets reviewedBy/At, back to `new` clears them. The app sends only `{status: 'reviewed'}` (Mark reviewed) |
 
 ## File uploads (Phase 2)
 `POST /uploads` multipart `file` (image/* or application/pdf, ≤ 10 MB) -> `{ data: { url, mimeType, size, name } }`.

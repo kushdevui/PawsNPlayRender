@@ -39,11 +39,6 @@ export interface ChoiceFieldDef extends FieldBase {
 export interface DateFieldDef extends FieldBase {
   kind: 'date';
 }
-/** The eight "Fine / Unsure / Not okay" rows (with_<key> + with_<key>_note). */
-export interface RatesFieldDef {
-  kind: 'rates';
-  key: 'rates';
-}
 /** Vaccination / deworming record files. */
 export interface DocumentsFieldDef {
   kind: 'documents';
@@ -57,7 +52,7 @@ export interface ConfirmFieldDef {
   required: string;
 }
 
-export type FieldDef = TextFieldDef | ChoiceFieldDef | DateFieldDef | RatesFieldDef | DocumentsFieldDef | ConfirmFieldDef;
+export type FieldDef = TextFieldDef | ChoiceFieldDef | DateFieldDef | DocumentsFieldDef | ConfirmFieldDef;
 
 export interface KydSection {
   n: number;
@@ -65,27 +60,6 @@ export interface KydSection {
   note?: string;
   fields: FieldDef[];
 }
-
-/** Social rows: [key, label]. Answers: with_<key> (fine|unsure|not_okay) and with_<key>_note. */
-export const RATE_ROWS: Array<{ key: string; label: string }> = [
-  { key: 'biggerDogs', label: 'Dogs bigger than them' },
-  { key: 'smallerDogs', label: 'Dogs smaller than them' },
-  { key: 'maleDogs', label: 'Male dogs' },
-  { key: 'femaleDogs', label: 'Female dogs' },
-  { key: 'puppies', label: 'Puppies or very playful dogs' },
-  { key: 'newPeople', label: 'New people' },
-  { key: 'men', label: 'Men' },
-  { key: 'women', label: 'Women' },
-];
-
-export const RATE_OPTIONS: Array<ChoiceOption & { tone: 'success' | 'accent' | 'danger' }> = [
-  { value: 'fine', label: 'Fine', tone: 'success' },
-  { value: 'unsure', label: 'Unsure', tone: 'accent' },
-  { value: 'not_okay', label: 'Not okay', tone: 'danger' },
-];
-
-export const RATE_NOTE_PLACEHOLDER = 'Story behind it (optional)';
-export const RATE_NOTE_MAX = 300;
 
 const text = (key: string, label: string, maxLength: number, extra: Partial<TextFieldDef> = {}): TextFieldDef => ({
   kind: 'text', key, label, maxLength, ...extra,
@@ -122,7 +96,7 @@ export const kydSections: KydSection[] = [
       choice('sex', 'Sex', [{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }], { required: 'Please choose one.' }),
       choice('sterilised', 'Sterilised?', YES_NO, { required: 'Please choose one.' }),
       // Shown only for unsterilised females (see isFieldVisible).
-      text('heatInfo', 'Date of her last heat, and is she due during this stay?', 500, { multiline: true }),
+      text('heatInfo', 'If female and not sterilised: date of last heat, and is she due during this stay?', 500, { multiline: true }),
     ],
   },
   {
@@ -130,14 +104,14 @@ export const kydSections: KydSection[] = [
     title: 'Health',
     note: 'Please also send us a photo or PDF of the **vaccination and deworming record** below.',
     fields: [
-      date('rabiesDate', 'Last anti-rabies vaccination', { half: true }),
-      date('comboVaccineDate', 'Last combined vaccination', { hint: '7-in-1 or similar', half: true }),
-      date('dewormingDate', 'Last deworming', { half: true }),
+      date('rabiesDate', 'Date of last anti-rabies vaccination', { half: true }),
+      date('comboVaccineDate', 'Date of last combined vaccination', { hint: '7-in-1 or similar', half: true }),
+      date('dewormingDate', 'Date of last deworming', { half: true }),
       text('tickFlea', 'Tick and flea prevention used, and when', 200, { hint: 'Spot-on / chewable / collar / tick bath / none' }),
       text('skinIssues', 'Any ticks, fleas or skin problems right now?', 300),
       text('recentIllness', 'Any illness in the past week?', 300, { hint: 'Cough, vomiting, loose motions' }),
       text('conditions', 'Any medical conditions, past surgeries or injuries we should know about?', 1000, { multiline: true }),
-      text('medication', 'Any medication?', 1000, { hint: 'Name, dose and timing', multiline: true }),
+      text('medication', 'Any medication?', 1000, { hint: 'Give the name, dose and timing', multiline: true }),
       text('allergies', 'Any allergies?', 300, { hint: 'Food, medicine, anything else' }),
       text('vet', "Your regular vet's name and phone number", 200),
       { kind: 'documents', key: 'documents', label: 'Vaccination and deworming records' },
@@ -145,25 +119,25 @@ export const kydSections: KydSection[] = [
   },
   {
     n: 4,
-    title: 'Food and water',
+    title: 'Food',
     note: 'Our standard meals are **rice and chicken cooked with a seasonal vegetable, twice a day, plus treats**.',
     fields: [
       text('homeDiet', 'What does your dog eat at home, and how many meals a day?', 500, { multiline: true }),
       choice('standardMealOk', 'Is our standard meal fine for your dog?', YES_NO),
-      text('specialFood', 'Will you send special food or kibble? If yes, how much and when should we give it?', 500, { multiline: true }),
-      choice('extraMeal', 'Does your dog need an extra meal?', YES_NO, { hint: 'Chargeable at ₹150 per meal' }),
       text('avoidFoods', 'Any foods or treats to avoid?', 300),
-      choice('ownBowls', 'Do you want separate water or food bowls for your dog?', YES_NO, { hint: 'The bowls are to be provided by you' }),
       text('eatingStyle', 'Is your dog a fussy or slow eater, or do they eat too fast?', 300),
     ],
   },
   {
     n: 5,
     title: 'With other dogs and with people',
-    note: 'For each one, tell us: fine, unsure or not okay. Add a line if there is a story behind it.',
+    note: 'Tell us in your own words, and add the story if there is one.',
     fields: [
-      { kind: 'rates', key: 'rates' },
-      text('breedsDislike', "Any particular breed or type of dog they don't get along with?", 300),
+      text('otherDogs', 'How is your dog with other dogs?', 1000, {
+        multiline: true,
+        hint: "Mention any sizes, sexes, breeds or types (such as puppies or very playful dogs) they don't get along with",
+      }),
+      text('withPeople', 'How is your dog with people?', 1000, { multiline: true, hint: 'Mention if they are wary of strangers, men or women' }),
       text('fightHistory', 'Has your dog ever been in a fight with another dog? What happened?', 1000, { multiline: true }),
       text('biteHistory', 'Has your dog ever bitten or snapped at a person? What happened?', 1000, { multiline: true }),
       text('boardingBefore', 'Has your dog stayed at a boarding or daycare before? How did it go?', 1000, { multiline: true }),
@@ -190,17 +164,36 @@ export const kydSections: KydSection[] = [
   },
   {
     n: 7,
-    title: 'Routine and extras',
+    title: 'Routine',
     fields: [
       text('sleep', 'Where does your dog sleep at home?', 200, { hint: 'Own bed, your bed, floor, crate' }),
       text('toilet', 'When and where does your dog usually pee and poop?', 300, { hint: 'On walks, in a garden, on a schedule' }),
       text('exercise', 'How much exercise is your dog used to in a day?', 200),
-      choice('bath', 'Would you like a bath and dry added to the stay?', YES_NO, { hint: 'Chargeable at ₹750' }),
       text('anythingElse', 'Anything else you want us to know about your dog?', 2000, { multiline: true }),
     ],
   },
   {
     n: 8,
+    title: 'Your requests for this stay',
+    note: 'These match the lines in italics in the Boarding Consent & Waiver. Anything marked **extra** is charged on top of the boarding rate.',
+    fields: [
+      text('trialVisit', 'Has your dog done a trial visit with us? If not, would you like to book one before the stay?', 300, {
+        multiline: true,
+        hint: 'Strongly recommended before a first overnight stay',
+      }),
+      choice('keepSeparate', 'Do you want your dog kept separately from other dogs?', YES_NO, { hint: 'We can only arrange this in advance' }),
+      text('specialFood', 'Does your dog need a special diet, a particular kibble or their own treats?', 500, {
+        multiline: true,
+        hint: 'If yes, you send the food with your dog. Tell us how much to give and when',
+      }),
+      choice('extraMeal', 'Does your dog need an extra meal?', YES_NO, { hint: 'Extra at ₹150 per meal' }),
+      choice('ownBowls', 'Do you want separate water or food bowls for your dog?', YES_NO, { hint: 'The bowls are to be provided by you' }),
+      choice('bath', 'Would you like a basic bath and dry?', YES_NO, { hint: 'Extra at ₹750, no haircuts' }),
+      text('sendingItems', 'What are you sending with your dog?', 500, { multiline: true, hint: 'Food, treats, medication, bowls, bed, toys' }),
+    ],
+  },
+  {
+    n: 9,
     title: 'Confirm',
     fields: [
       {
@@ -218,8 +211,8 @@ export const kydSections: KydSection[] = [
 export const kydIntro = {
   title: 'Know Your Dog',
   paragraphs: [
-    'Please fill this once for each dog when you book. The more we know about your dog, the better we can plan their room, their playmates and their day, and the lower the chance of an accident.',
-    'There are no wrong answers, and nothing here will get your dog turned away without a conversation first.',
+    'This is step two of confirming your booking, after the Boarding Consent & Waiver. Please fill it once for each dog. It takes about five minutes.',
+    'The more we know about your dog, the better we can plan their room, their playmates and their day, and the lower the chance of an accident. There are no wrong answers, and nothing here will get your dog turned away without a conversation first.',
   ],
   pill: 'About 5 minutes',
 };

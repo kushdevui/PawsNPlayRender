@@ -8,7 +8,6 @@ import type { FieldDef, KydSection as Section } from './kydData';
 import { KydChoiceField, KydConfirmField, KydDateField, KydTextField } from './KydFields';
 import { KydDocuments } from './KydDocuments';
 import { isFieldVisible, type KydErrors, type KydValues } from './kydLogic';
-import { KydRates } from './KydRates';
 
 interface Props {
   section: Section;
@@ -49,8 +48,6 @@ export function KydSection({ section, values, errors, onChange, files, onFilesCh
         return <KydDateField field={f} value={s(f.key)} error={errors[f.key]} onChange={(v) => onChange(f.key, v)} />;
       case 'confirm':
         return <KydConfirmField field={f} value={values.confirmTrue === true} error={errors[f.key]} onChange={(v) => onChange(f.key, v)} />;
-      case 'rates':
-        return <KydRates values={values} onChange={onChange} />;
       case 'documents':
         return <KydDocuments label={f.label} files={files} onChange={onFilesChange} disabled={disabled} />;
     }

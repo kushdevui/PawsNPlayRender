@@ -264,6 +264,8 @@ export interface Questionnaire {
   /** Dog profile this submission is linked to (admin sets it). */
   dogId: string | null;
   reviewedBy: string | null; // user id
+  /** Reviewer's name, sent with the submission so no user lookup is needed. */
+  reviewedByName: string | null;
   reviewedAt: string | null;
   createdAt: string;
   updatedAt: string;

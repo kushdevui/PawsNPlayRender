@@ -1,4 +1,4 @@
-// Read-only view of a Know Your Dog submission: the form's sections, answered questions only.
+// Read-only view of a Know Your Dog submission: every question of the form, in order, with the dog parent's answer.
 import { View } from 'react-native';
 import { AppText, Badge, Button, Card, Divider, Icon, type BadgeTone } from '@/components/common';
 import { makeStyles } from '@/theme';
@@ -28,8 +28,10 @@ function Row({ row }: { row: AnswerRow }) {
       </View>
       {row.tone ? (
         <Badge label={row.value} tone={toneBadge[row.tone]} />
-      ) : (
+      ) : row.value ? (
         <AppText variant="body" selectable>{row.value}</AppText>
+      ) : (
+        <AppText variant="body" color="textSubtle">Not answered</AppText>
       )}
       {!!row.note && <AppText variant="body" color="textMuted" selectable>{row.note}</AppText>}
       {row.phone && <PhoneLinks phone={row.value} />}
@@ -37,7 +39,7 @@ function Row({ row }: { row: AnswerRow }) {
   );
 }
 
-function SectionCard({ n, title, rows }: { n?: number; title: string; rows: AnswerRow[] }) {
+function SectionCard({ n, title, rows, answered }: { n?: number; title: string; rows: AnswerRow[]; answered?: number }) {
   const styles = useStyles();
   return (
     <Card>
@@ -48,6 +50,9 @@ function SectionCard({ n, title, rows }: { n?: number; title: string; rows: Answ
           </View>
         )}
         <AppText variant="subheading" accessibilityRole="header" style={styles.flex}>{title}</AppText>
+        {answered !== undefined && (
+          <AppText variant="caption" color="textSubtle">{`${answered} of ${rows.length} answered`}</AppText>
+        )}
       </View>
       {rows.map((r, i) => (
         <View key={r.key}>
@@ -63,9 +68,9 @@ export function AnswerSections({ sections, extra }: { sections: AnswerSection[];
   return (
     <>
       {sections.map((s) => (
-        <SectionCard key={s.n} n={s.n} title={s.title} rows={s.rows} />
+        <SectionCard key={s.n} n={s.n} title={s.title} rows={s.rows} answered={s.answered} />
       ))}
-      {extra.length > 0 && <SectionCard title="Other answers" rows={extra} />}
+      {extra.length > 0 && <SectionCard title="Earlier form answers" rows={extra} />}
     </>
   );
 }

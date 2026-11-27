@@ -1,16 +1,13 @@
 // Pure helpers for the Know Your Dog form: defaults, visibility, validation, progress, payload.
 import type { QuestionnaireAnswers } from '@/api/types';
 import { toDateKey } from '@/utils/date';
-import { RATE_ROWS, kydSections, kydText, type FieldDef } from './kydData';
+import { kydSections, kydText, type FieldDef } from './kydData';
 
 /** Form state: text / choice / 'YYYY-MM-DD' strings by answer key, plus confirmTrue (boolean). */
 export type KydValues = Record<string, string | boolean>;
 export type KydErrors = Record<string, string>;
 
 export const initialValues = (): KydValues => ({ signDate: toDateKey(new Date()), confirmTrue: false });
-
-export const rateKey = (row: string) => `with_${row}`;
-export const rateNoteKey = (row: string) => `with_${row}_note`;
 
 /** The heat question is only for unsterilised females. */
 export const isFieldVisible = (key: string, values: KydValues) =>
@@ -41,11 +38,10 @@ export function validate(values: KydValues): KydErrors {
   return errors;
 }
 
-/** Every answer key currently on the page (rates expand to choice + note). */
+/** Every answer key currently on the page. */
 const visibleKeys = (values: KydValues): string[] =>
   allFields().flatMap((f) => {
     if (f.kind === 'documents') return [];
-    if (f.kind === 'rates') return RATE_ROWS.flatMap((r) => [rateKey(r.key), rateNoteKey(r.key)]);
     return isFieldVisible(f.key, values) ? [f.key] : [];
   });
 

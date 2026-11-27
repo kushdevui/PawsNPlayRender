@@ -227,6 +227,7 @@ export function normalizeQuestionnaire(raw: any): Questionnaire {
     })),
     dogId: raw?.dogId ? (typeof raw.dogId === 'object' ? idOf(raw.dogId) : str(raw.dogId)) : null,
     reviewedBy: raw?.reviewedBy ? (typeof raw.reviewedBy === 'object' ? idOf(raw.reviewedBy) : str(raw.reviewedBy)) : null,
+    reviewedByName: raw?.reviewedByName ? str(raw.reviewedByName) : null,
     reviewedAt: raw?.reviewedAt ?? null,
     createdAt: str(raw?.createdAt),
     updatedAt: str(raw?.updatedAt),

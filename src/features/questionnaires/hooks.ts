@@ -20,7 +20,8 @@ export const useNewQuestionnairesCount = () => {
 export const useQuestionnaire = (id: string | undefined) =>
   useQuery({ queryKey: queryKeys.questionnaire(id ?? ''), queryFn: () => questionnairesApi.get(id!), enabled: !!id });
 
-/** PATCH status / linked dog. Refreshes every list (and counts) plus the detail. */
+/** PATCH status (Mark reviewed). The response is the full submission, so the detail is updated from it
+ *  without another GET; only the lists (and the dashboard count) are refreshed. */
 export const useUpdateQuestionnaire = (id: string) => {
   const qc = useQueryClient();
   return useMutation({
@@ -28,7 +29,6 @@ export const useUpdateQuestionnaire = (id: string) => {
     onSuccess: (data) => {
       qc.setQueryData(queryKeys.questionnaire(id), data);
       qc.invalidateQueries({ queryKey: ['questionnaires', 'list'] });
-      qc.invalidateQueries({ queryKey: queryKeys.questionnaire(id) });
     },
   });
 };

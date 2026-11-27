@@ -1,11 +1,12 @@
-// One "Know Your Dog" submission: owner contact, safety flags, record files, every answer by section.
+// One "Know Your Dog" submission, read-only: owner contact, safety flags, record files and every question
+// with its answer. Everything comes from one call (GET /questionnaires/:id); the only action is Mark reviewed (header).
 import { useMemo } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { usePermission } from '@/auth/permissions';
 import { AppText, AttachmentList, Badge, Card, InlineAlert, Screen, StateView } from '@/components/common';
 import { AnswerSections, PhoneLinks } from '@/features/questionnaires/AnswerSections';
-import { QuestionnaireActions } from '@/features/questionnaires/QuestionnaireActions';
+import { ReviewHeaderAction } from '@/features/questionnaires/QuestionnaireActions';
 import { groupAnswers } from '@/features/questionnaires/answers';
 import { useQuestionnaire } from '@/features/questionnaires/hooks';
 import { questionnaireStatusLabel, questionnaireStatusTone } from '@/features/questionnaires/status';
@@ -38,7 +39,9 @@ export default function QuestionnaireDetail() {
 
   return (
     <Screen edges={['bottom']} style={styles.noPad}>
-      <Stack.Screen options={{ title: dogName }} />
+      <Stack.Screen
+        options={{ title: dogName, headerRight: () => <ReviewHeaderAction questionnaire={q} canManage={can('forms.manage')} /> }}
+      />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />}
@@ -51,7 +54,12 @@ export default function QuestionnaireDetail() {
           </View>
           {!!breed && <AppText variant="caption">{breed}</AppText>}
           <AppText variant="caption">
-            {[q.createdAt && `Sent ${formatDateTime(q.createdAt)}`, q.reviewedAt && q.status !== 'new' && `${questionnaireStatusLabel[q.status]} ${formatDateTime(q.reviewedAt)}`]
+            {[
+              q.createdAt && `Sent ${formatDateTime(q.createdAt)}`,
+              q.reviewedAt &&
+                q.status !== 'new' &&
+                `${questionnaireStatusLabel[q.status]}${q.reviewedByName ? ` by ${q.reviewedByName}` : ''} ${formatDateTime(q.reviewedAt)}`,
+            ]
               .filter(Boolean)
               .join(' · ')}
           </AppText>
@@ -67,8 +75,6 @@ export default function QuestionnaireDetail() {
         {grouped.warnings > 0 && (
           <InlineAlert tone="warning" message={`${plural(grouped.warnings, 'answer')} to check before the stay - highlighted below.`} />
         )}
-
-        <QuestionnaireActions questionnaire={q} canManage={can('forms.manage')} />
 
         <Card>
           <AppText variant="label" color="textMuted">VACCINATION AND DEWORMING RECORDS</AppText>

@@ -184,6 +184,8 @@ const ALLOWED_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
 
 const QUESTIONNAIRE_STATUSES: QuestionnaireStatus[] = ['new', 'reviewed', 'archived'];
 const answer = (q: Questionnaire, key: string) => (typeof q.answers[key] === 'string' ? (q.answers[key] as string) : '');
+/** Like the server: the detail carries the reviewer's name so the app needs no second call. */
+const withReviewer = (q: Questionnaire) => ({ ...q, reviewedByName: (q.reviewedBy && db.users.find((u) => u.id === q.reviewedBy)?.name) || null });
 const questionnaireListItem = (q: Questionnaire) => ({
   id: q.id, status: q.status, createdAt: q.createdAt, dogName: answer(q, 'dogName'), breed: answer(q, 'breed'),
   ownerName: answer(q, 'ownerName'), ownerPhone: answer(q, 'ownerPhone'), documentsCount: q.documents.length,
@@ -507,7 +509,7 @@ const routes: Array<[string, string, Handler]> = [
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return list(items, ctx.query);
   }],
-  ['GET', '/questionnaires/:id', (ctx) => (requireUser(ctx, STAFF), ok(findOr404(db.questionnaires, ctx.params.id, 'Questionnaire')))],
+  ['GET', '/questionnaires/:id', (ctx) => (requireUser(ctx, STAFF), ok(withReviewer(findOr404(db.questionnaires, ctx.params.id, 'Questionnaire'))))],
   ['PATCH', '/questionnaires/:id', (ctx) => {
     const user = requireUser(ctx, ['admin']);
     const q = findOr404(db.questionnaires, ctx.params.id, 'Questionnaire');
@@ -521,7 +523,7 @@ const routes: Array<[string, string, Handler]> = [
     }
     if (dogId !== undefined) q.dogId = dogId;
     q.updatedAt = nowIso();
-    return ok(q);
+    return ok(withReviewer(q));
   }],
 ];
 
