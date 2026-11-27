@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
-import { USE_MOCKS } from '@/api/client';
+import { API_URL, USE_MOCKS } from '@/api/client';
 import { useSession } from '@/auth/session';
 import { AppText, Button, Divider, InlineAlert, Logo, Screen, TextInput } from '@/components/common';
 import { makeStyles } from '@/theme';
+import { showAlert } from '@/lib/dialog';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Admin test accounts (mock mode). Password for all: password123
 const DEMO_ACCOUNTS = [
-  { label: 'Admin', email: 'admin@pawsnplay.com' },
-  { label: 'User', email: 'priya@example.com' },
-  { label: 'Staff', email: 'neha.staff@pawsnplay.com' },
+  { label: 'Kush', email: 'kush@pawsnplay.com' },
+  { label: 'Divya', email: 'divya@pawsnplay.com' },
+  { label: 'Shreya', email: 'shreya@pawsnplay.com' },
 ];
 
 type Errors = { email?: string; password?: string };
@@ -58,7 +60,7 @@ export default function LoginScreen() {
       <View style={styles.header}>
         <Logo size={132} />
         <AppText variant="heading" align="center">Welcome back</AppText>
-        <AppText variant="caption" align="center">Log in to book play, care and grooming for your pet.</AppText>
+        <AppText variant="caption" align="center">Boarding admin - manage dogs, bookings and capacity.</AppText>
       </View>
 
       <View style={styles.form}>
@@ -100,7 +102,7 @@ export default function LoginScreen() {
           title="Forgot password?"
           variant="link"
           style={styles.forgot}
-          onPress={() => Alert.alert('Forgot password', 'Password reset is coming soon.')}
+          onPress={() => showAlert('Forgot password', 'Password reset is coming soon.')}
         />
 
         <Button title="Log in" onPress={submit} loading={loading} fullWidth size="lg" />
@@ -111,9 +113,15 @@ export default function LoginScreen() {
         <Button title="Create an account" variant="link" onPress={() => router.push('/register')} />
       </View>
 
+      {__DEV__ && (
+        <AppText variant="caption" align="center" color="textSubtle" style={styles.server}>
+          {USE_MOCKS ? 'Using mock data (mock/data)' : `Server: ${API_URL}`}
+        </AppText>
+      )}
+
       {USE_MOCKS && (
         <View style={styles.demo}>
-          <Divider label="Test accounts (mock mode)" />
+          <Divider label="Admin test accounts (mock mode)" />
           <View style={styles.demoRow}>
             {DEMO_ACCOUNTS.map((a) => (
               <Button key={a.email} title={a.label} variant="outline" size="sm" onPress={() => fillDemo(a.email)} />
@@ -131,5 +139,6 @@ const useStyles = makeStyles((t) => ({
   forgot: { alignSelf: 'flex-end', marginTop: -t.spacing.xs },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: t.spacing.xs, marginTop: t.spacing.lg },
   demo: { gap: t.spacing.md, marginTop: t.spacing.xl },
+  server: { marginTop: t.spacing.lg },
   demoRow: { flexDirection: 'row', justifyContent: 'center', gap: t.spacing.sm },
 }));

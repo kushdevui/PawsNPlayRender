@@ -22,3 +22,6 @@ expo-env.d.ts
 *.mobileprovision
 *.pem
 coverage/
+
+# web build output (scripts/deploy-web.sh)
+dist-web/

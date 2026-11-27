@@ -1,5 +1,4 @@
 import { View } from 'react-native';
-import type { BookingStatus } from '@/api/types';
 import { makeStyles, useTheme } from '@/theme';
 import { AppText } from './AppText';
 
@@ -13,6 +12,7 @@ const tones = {
 } as const;
 export type BadgeTone = keyof typeof tones;
 
+/** Small status pill. Tones map to theme colours. */
 export function Badge({ label, tone = 'neutral' }: { label: string; tone?: BadgeTone }) {
   const theme = useTheme();
   const styles = useStyles();
@@ -25,13 +25,6 @@ export function Badge({ label, tone = 'neutral' }: { label: string; tone?: Badge
     </View>
   );
 }
-
-export const bookingStatusTone: Record<BookingStatus, BadgeTone> = {
-  pending: 'warning',
-  confirmed: 'info',
-  completed: 'success',
-  cancelled: 'neutral',
-};
 
 const useStyles = makeStyles((t) => ({
   badge: { alignSelf: 'flex-start', paddingHorizontal: t.spacing.sm, paddingVertical: t.spacing.xxs, borderRadius: t.radius.pill },

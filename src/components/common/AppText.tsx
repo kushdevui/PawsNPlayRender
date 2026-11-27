@@ -11,12 +11,14 @@ export interface AppTextProps extends TextProps {
 }
 
 /** The only text component screens should use (renders Paper's Text with our typography). */
-export function AppText({ variant = 'body', color, align, style, ...rest }: AppTextProps) {
+export function AppText({ variant = 'body', color, align, style, children, ...rest }: AppTextProps) {
   const theme = useTheme();
   return (
     <Text
       style={[theme.typography[variant], color && { color: theme.colors[color] }, align && { textAlign: align }, style]}
       {...rest}
-    />
+    >
+      {children}
+    </Text>
   );
 }

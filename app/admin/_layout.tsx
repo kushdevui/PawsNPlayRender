@@ -1,17 +1,25 @@
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 import { RoleGate } from '@/auth/RoleGate';
-import { tabIcon, useTabScreenOptions } from '@/components/navigation';
+import { useStackScreenOptions } from '@/components/navigation';
 
+// Admin area: tabs + stack screens for forms/details on top.
+// Note: don't use presentation 'modal' here - Paper pickers (Portal) would render behind iOS modals.
 export default function AdminLayout() {
-  const screenOptions = useTabScreenOptions();
+  const screenOptions = useStackScreenOptions();
   return (
     <RoleGate allow={['admin']}>
-      <Tabs screenOptions={screenOptions}>
-        <Tabs.Screen name="index" options={{ title: 'Dashboard', tabBarIcon: tabIcon('view-dashboard-outline', 'view-dashboard') }} />
-        <Tabs.Screen name="bookings" options={{ title: 'Bookings', tabBarIcon: tabIcon('calendar-blank-outline', 'calendar-blank') }} />
-        <Tabs.Screen name="users" options={{ title: 'Users', tabBarIcon: tabIcon('account-group-outline', 'account-group') }} />
-        <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: tabIcon('account-outline', 'account') }} />
-      </Tabs>
+      <Stack screenOptions={screenOptions}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="booking/new" options={{ title: 'New booking' }} />
+        <Stack.Screen name="booking/[id]" options={{ title: 'Booking' }} />
+        <Stack.Screen name="dog/new" options={{ title: 'Add dog' }} />
+        <Stack.Screen name="dog/[id]" options={{ title: 'Dog' }} />
+        <Stack.Screen name="settings" options={{ title: 'Boarding settings' }} />
+        <Stack.Screen name="forms/index" options={{ title: 'Know Your Dog forms' }} />
+        <Stack.Screen name="forms/[id]" options={{ title: 'Form' }} />
+        <Stack.Screen name="waivers/index" options={{ title: 'Signed waivers' }} />
+        <Stack.Screen name="waivers/[id]" options={{ title: 'Waiver' }} />
+      </Stack>
     </RoleGate>
   );
 }

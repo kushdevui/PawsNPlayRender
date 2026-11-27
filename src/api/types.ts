@@ -1,4 +1,5 @@
-// Shared API types. Keep in sync with mock/endpoints.json and the Node backend.
+// Shared API types. Keep in sync with mock/endpoints.json, docs/ARCHITECTURE.md and the Node backend.
+// All dates are ISO-8601 strings in UTC (e.g. "2026-11-23T04:30:00.000Z"); the app shows them in local time.
 
 export type Role = 'admin' | 'user' | 'staff';
 export type UserStatus = 'active' | 'inactive';
@@ -14,80 +15,204 @@ export interface User {
   createdAt: string;
 }
 
-export type Species = 'dog' | 'cat';
+// ---------- Dogs ----------
+export type Gender = 'male' | 'female';
+export type Temperament = 'friendly' | 'shy' | 'reactive';
+export type DogStatus = 'active' | 'archived';
 
-export interface Pet {
+/** A file attached to a dog (e.g. vaccination card photo or PDF). */
+export interface DogDocument {
   id: string;
-  ownerId: string;
+  kind: 'vaccination' | 'other';
   name: string;
-  species: Species;
+  /** Mock: local file URI on this device. Real API: URL returned by the upload endpoint. */
+  uri: string;
+  mimeType: string; // image/jpeg, image/png, application/pdf ...
+  size: number | null; // bytes
+  uploadedAt: string;
+}
+
+export interface Dog {
+  id: string;
+  name: string;
   breed: string;
-  gender: 'male' | 'female';
-  dateOfBirth: string;
-  weightKg: number;
+  gender: Gender;
+  dateOfBirth: string | null; // YYYY-MM-DD
+  weightKg: number | null;
+  color: string;
+  /** Linked customer account - null until the customer app exists. */
+  ownerId: string | null;
+  ownerName: string;
+  ownerPhone: string;
   vaccinated: boolean;
+  vaccinationExpiry: string | null; // YYYY-MM-DD
+  neutered: boolean;
+  temperament: Temperament;
+  feedingNotes: string;
+  medicalNotes: string;
   notes: string;
   photoUrl: string | null;
+  documents: DogDocument[];
+  status: DogStatus;
   createdAt: string;
+  updatedAt: string;
 }
-export type PetInput = Omit<Pet, 'id' | 'ownerId' | 'createdAt'> & { ownerId?: string };
 
-export type ServiceCategory = 'daycare' | 'grooming' | 'play' | 'walking' | 'training';
+export type DogInput = Omit<Dog, 'id' | 'createdAt' | 'updatedAt' | 'ownerId' | 'photoUrl' | 'status' | 'documents'> & {
+  ownerId?: string | null;
+  photoUrl?: string | null;
+  status?: DogStatus;
+  documents?: DogDocument[];
+};
 
-export interface Service {
+// ---------- Bookings (boarding stays) ----------
+/**
+ * confirmed   - booked, dog not arrived yet
+ * checked_in  - dog is at the facility (counts toward capacity)
+ * checked_out - stay finished
+ * cancelled   - not happening
+ * (pending is reserved for future customer-app requests awaiting approval)
+ */
+export type BookingStatus = 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
+export type BookingSource = 'admin' | 'app';
+
+// ---------- Payments ----------
+export type PaymentMethod = 'cash' | 'upi' | 'card' | 'bank';
+/** advance = paid before/at booking, payment = later instalment/settlement, refund = money returned (reduces paid). */
+export type PaymentType = 'advance' | 'payment' | 'refund';
+export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'overpaid';
+
+export interface Payment {
+  id: string;
+  amount: number; // always positive; refunds are subtracted
+  type: PaymentType;
+  method: PaymentMethod;
+  note: string;
+  receivedAt: string; // ISO
+  recordedBy: string; // user id
+}
+
+export interface PaymentInput {
+  amount: number;
+  type: PaymentType;
+  method: PaymentMethod;
+  note?: string;
+  receivedAt?: string; // default now
+}
+
+export interface DogSummary {
   id: string;
   name: string;
-  category: ServiceCategory;
-  description: string;
-  durationMinutes: number;
-  price: number;
-  currency: string;
-  speciesAllowed: Species[];
-  active: boolean;
+  breed: string;
+  ownerName: string;
+  ownerPhone: string;
 }
-export type ServiceInput = Omit<Service, 'id'>;
-
-export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 export interface Booking {
   id: string;
-  userId: string;
-  petId: string;
-  serviceId: string;
-  staffId: string | null;
-  startTime: string;
-  endTime: string;
+  dogId: string;
+  /** Denormalised for lists (server joins it; Mongo: populate). */
+  dog: DogSummary | null;
+  checkIn: string;
+  checkOut: string;
   status: BookingStatus;
-  notes: string;
-  totalPrice: number;
+  kennel: string | null;
+  nights: number;
+  pricePerNight: number;
+  totalAmount: number;
   currency: string;
+  notes: string;
+  source: BookingSource;
+  createdBy: string;
   createdAt: string;
+  updatedAt: string;
+  payments: Payment[];
+  /** Derived by the server: advances + payments - refunds. */
+  amountPaid: number;
+  /** Derived: totalAmount - amountPaid (0 for cancelled; negative = overpaid). */
+  balanceDue: number;
+  /** Derived from amountPaid vs totalAmount. */
+  paymentStatus: PaymentStatus;
 }
+
 export interface BookingInput {
-  petId: string;
-  serviceId: string;
-  startTime: string;
+  dogId: string;
+  checkIn: string;
+  checkOut: string;
+  kennel?: string | null;
+  pricePerNight?: number;
   notes?: string;
 }
 
-export interface AppNotification {
-  id: string;
-  userId: string;
-  type: 'booking' | 'promo' | 'reminder' | 'assignment' | 'system';
-  title: string;
-  body: string;
-  read: boolean;
-  data: Record<string, string> | null;
-  createdAt: string;
+export interface BookingFilters {
+  /** Bookings overlapping [from, to) - use for month or single-day views. */
+  from?: string;
+  to?: string;
+  status?: BookingStatus;
+  dogId?: string;
+  paymentStatus?: PaymentStatus | 'due'; // due = unpaid or partial
+}
+
+/** Billing for stays that CHECK IN within [from, to) (cancelled excluded), plus cash collected in the period. */
+export interface BillingSummary {
+  from: string;
+  to: string;
+  currency: string;
+  bookings: number;
+  expected: number; // sum of totalAmount
+  received: number; // sum of amountPaid
+  due: number; // sum of positive balances
+  advances: number; // sum of advance payments
+  paidCount: number;
+  partialCount: number;
+  unpaidCount: number;
+  /** All months, non-cancelled, not yet fully paid. */
+  outstandingAllTime: number;
+  outstandingBookings: number;
+  /** Money actually received in [from, to) for any stay (advances + payments - refunds). */
+  collected: number;
+  collectedCount: number;
+}
+
+// ---------- Facility ----------
+export interface FacilitySettings {
+  facilityName: string;
+  capacity: number;
+  defaultCheckInTime: string; // HH:mm
+  defaultCheckOutTime: string; // HH:mm
+  pricePerNight: number;
+  currency: string;
+  timezone: string;
 }
 
 export interface DashboardStats {
-  totalUsers: number;
-  totalStaff: number;
-  totalPets: number;
-  bookingsByStatus: Record<BookingStatus, number>;
-  revenue: { amount: number; currency: string };
-  upcomingBookings: Booking[];
+  capacity: number;
+  occupiedNow: number;
+  availableNow: number;
+  todayCheckIns: Booking[];
+  todayCheckOuts: Booking[];
+  upcoming: Booking[]; // next 7 days, not yet checked in
+  occupancyNext7Days: Array<{ date: string; count: number }>; // date = YYYY-MM-DD (local), count = peak dogs that day
+  activeDogs: number;
+  bookingsThisMonth: number;
+  /** Money still to collect across all non-cancelled stays. */
+  paymentsDue: number;
+  paymentsDueBookings: number;
+}
+
+/** One calendar day in the occupancy calendar. */
+export interface OccupancyDay {
+  date: string; // YYYY-MM-DD (facility local)
+  /** Peak dogs present at the same time that day. */
+  occupied: number;
+  available: number;
+  checkIns: number;
+  checkOuts: number;
+}
+
+export interface OccupancyCalendar {
+  capacity: number;
+  days: OccupancyDay[];
 }
 
 export interface AuthResponse {
@@ -96,7 +221,188 @@ export interface AuthResponse {
   user: User;
 }
 
-// Response envelopes
+// ---------- Questionnaires ("Know Your Dog", BACKEND_API_SPEC §7.12) ----------
+/** Flat answers object: text / yes-no / 'YYYY-MM-DD' strings, plus `confirmTrue: true`. Empty answers are omitted. */
+export type QuestionnaireAnswers = Record<string, string | boolean>;
+
+export interface QuestionnaireReceipt {
+  id: string;
+  createdAt: string;
+}
+
+/** new = not looked at yet, reviewed = read by the team, archived = done / spam. */
+export type QuestionnaireStatus = 'new' | 'reviewed' | 'archived';
+
+/** A record file the dog parent attached (vaccination / deworming). */
+export interface QuestionnaireDocument {
+  id: string;
+  name: string;
+  uri: string; // URL from the uploads provider
+  mimeType: string;
+  size: number | null; // bytes
+  uploadedAt: string;
+}
+
+/** Row in GET /questionnaires (newest first). */
+export interface QuestionnaireListItem {
+  id: string;
+  status: QuestionnaireStatus;
+  createdAt: string;
+  dogName: string;
+  breed: string;
+  ownerName: string;
+  ownerPhone: string;
+  documentsCount: number;
+}
+
+/** GET /questionnaires/:id */
+export interface Questionnaire {
+  id: string;
+  status: QuestionnaireStatus;
+  answers: QuestionnaireAnswers;
+  documents: QuestionnaireDocument[];
+  /** Dog profile this submission is linked to (admin sets it). */
+  dogId: string | null;
+  reviewedBy: string | null; // user id
+  /** Reviewer's name, sent with the submission so no user lookup is needed. */
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuestionnaireFilters {
+  status?: QuestionnaireStatus;
+  /** Dog name, owner name or owner phone (substring, case-insensitive). */
+  search?: string;
+}
+
+/** PATCH /questionnaires/:id (admin). dogId null unlinks. */
+export interface QuestionnaireUpdate {
+  status?: QuestionnaireStatus;
+  dogId?: string | null;
+}
+
+// ---------- Waivers ("Boarding Consent & Waiver", server-owned and versioned) ----------
+/** Text may contain **bold** markup (parse with parseInline from features/faqs/faqText). */
+export type WaiverBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'card'; title?: string; text: string; note?: string; extra?: string; items?: string[] }
+  | { type: 'bullets'; title?: string; items: string[] }
+  | { type: 'numbered'; intro: string; items: string[] }
+  | { type: 'rates'; title: string; text: string; items: Array<{ price: string; label: string }> }
+  | { type: 'statement'; text: string };
+
+export interface WaiverPart {
+  id: string;
+  label: 'Part A' | 'Part B' | null;
+  title: string;
+  blocks: WaiverBlock[];
+}
+
+export interface WaiverContent {
+  version: string;
+  title: string;
+  intro: string[];
+  parts: WaiverPart[];
+}
+
+export interface WaiverConsentDef {
+  key: string;
+  /** Exact text agreed to (stored with the signature). May span lines ("\n", "• " bullets). */
+  label: string;
+  /** Few words for messages ("Please tick: <shortLabel>"). */
+  shortLabel: string;
+  required: boolean;
+}
+
+/** GET /waivers/current (public). */
+export interface CurrentWaiver {
+  version: string;
+  contentHash: string;
+  content: WaiverContent;
+  consents: WaiverConsentDef[];
+}
+
+/** Signature drawn on the pad: strokes of [x, y] points in a width x height box (pixels). */
+export interface SignatureData {
+  width: number;
+  height: number;
+  strokes: number[][][];
+}
+
+/** POST /waivers (public). `website` is the honeypot (empty for real people). */
+export interface WaiverSubmission {
+  version: string;
+  contentHash: string;
+  parentName: string;
+  dogName: string;
+  phone: string;
+  consents: Record<string, boolean>;
+  typedSignature: string;
+  signature: SignatureData;
+  questionnaireId?: string;
+  website: string;
+}
+
+export interface WaiverReceipt {
+  id: string;
+  signedAt: string;
+  version: string;
+}
+
+/** Row in GET /waivers (newest first). */
+export interface WaiverListItem {
+  id: string;
+  signedAt: string;
+  parentName: string;
+  dogName: string;
+  phone: string;
+  version: string;
+  photosOptOut: boolean;
+  questionnaireId: string | null;
+  dogId: string | null;
+}
+
+/** GET /waivers/:id */
+export interface Waiver {
+  id: string;
+  signedAt: string;
+  parentName: string;
+  dogName: string;
+  phone: string;
+  version: string;
+  contentHash: string;
+  consents: Array<{ key: string; label: string; value: boolean }>;
+  photosOptOut: boolean;
+  typedSignature: string;
+  signature: SignatureData | null;
+  signatureSvg: string;
+  questionnaireId: string | null;
+  dogId: string | null;
+  userAgent: string;
+  status: 'signed';
+  /** Snapshot of the text that was signed (null if the server left it out). */
+  content: WaiverContent | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WaiverFilters {
+  /** Parent name, dog name or phone (substring, case-insensitive). */
+  search?: string;
+  /** signedAt range, ISO. */
+  from?: string;
+  to?: string;
+}
+
+/** PATCH /waivers/:id (admin). null unlinks. */
+export interface WaiverUpdate {
+  dogId?: string | null;
+  questionnaireId?: string | null;
+}
+
+// ---------- Envelopes ----------
 export interface ApiItem<T> {
   data: T;
 }
@@ -105,7 +411,7 @@ export interface ApiList<T> {
   meta: { total: number; page: number; limit: number };
 }
 export interface ApiErrorBody {
-  error: { code: string; message: string };
+  error: { code: string; message: string; details?: unknown };
 }
 
 export interface ListParams {

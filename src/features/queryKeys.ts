@@ -1,9 +1,17 @@
 // Central query keys so invalidation stays consistent.
 export const queryKeys = {
-  services: (params?: object) => ['services', params ?? {}] as const,
-  pets: (params?: object) => ['pets', params ?? {}] as const,
-  bookings: (params?: object) => ['bookings', params ?? {}] as const,
-  users: (params?: object) => ['users', params ?? {}] as const,
-  notifications: (params?: object) => ['notifications', params ?? {}] as const,
+  dogs: (params?: object) => ['dogs', 'list', params ?? {}] as const,
+  dog: (id: string) => ['dogs', 'detail', id] as const,
+  bookings: (params?: object) => ['bookings', 'list', params ?? {}] as const,
+  booking: (id: string) => ['bookings', 'detail', id] as const,
+  settings: ['settings'] as const,
   dashboard: ['admin', 'dashboard'] as const,
+  occupancy: (from: string, to: string) => ['admin', 'occupancy', from, to] as const,
+  billing: (from: string, to: string) => ['admin', 'billing', from, to] as const,
+  users: (params?: object) => ['users', params ?? {}] as const,
+  questionnaires: (params?: object) => ['questionnaires', 'list', params ?? {}] as const,
+  questionnaire: (id: string) => ['questionnaires', 'detail', id] as const,
+  currentWaiver: ['waivers', 'current'] as const,
+  waivers: (params?: object) => ['waivers', 'list', params ?? {}] as const,
+  waiver: (id: string) => ['waivers', 'detail', id] as const,
 };
